@@ -29,8 +29,31 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => User::ROLE_KOMUNITAS,
+            'is_active' => true,
+            'wajib_ganti_sandi' => false,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Akun Tim Startup ALIR.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_ADMIN,
+        ]);
+    }
+
+    /**
+     * Akun nonaktif (tidak dapat login).
+     */
+    public function nonaktif(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
     }
 
     /**
