@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Support\Geo;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -38,6 +40,20 @@ class Wilayah extends Model
     public function cuaca(): HasMany
     {
         return $this->hasMany(Cuaca::class);
+    }
+
+    #[Scope]
+    protected function aktif(Builder $query): void
+    {
+        $query->where('is_aktif', true);
+    }
+
+    /**
+     * F4 / A2: wilayah dianggap sedang dipakai bila memiliki laporan banjir.
+     */
+    public function isInUse(): bool
+    {
+        return $this->laporanBanjir()->exists();
     }
 
     /**
