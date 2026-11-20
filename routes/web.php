@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
+use App\Http\Controllers\Admin\PetaLaporanController;
 use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationController;
@@ -64,6 +65,12 @@ Route::prefix('admin')
     ->middleware(['auth', 'password.changed', 'role:admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // F-03 Pemetaan Titik Banjir
+        Route::get('peta-laporan', [PetaLaporanController::class, 'index'])->name('peta-laporan.index');
+        Route::get('peta-laporan/data', [PetaLaporanController::class, 'data'])->middleware('throttle:60,1')->name('peta-laporan.data');
+        Route::get('peta-laporan/{laporan}/sekitar', [PetaLaporanController::class, 'sekitar'])->middleware('throttle:60,1')->name('peta-laporan.sekitar');
+        Route::get('laporan/{laporan}/foto/{foto}', [PetaLaporanController::class, 'foto'])->scopeBindings()->name('laporan.foto');
 
         Route::resource('wilayah', AdminWilayahController::class)->except(['show']);
         Route::patch('wilayah/{wilayah}/status', [AdminWilayahController::class, 'toggleStatus'])->name('wilayah.toggle-status');
