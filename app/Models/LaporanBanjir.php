@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Support\Geo;
+use App\Services\KepercayaanLaporanService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -61,6 +61,11 @@ class LaporanBanjir extends Model
     public function foto(): HasMany
     {
         return $this->hasMany(FotoLaporan::class)->orderBy('urutan');
+    }
+
+    public function fotos(): HasMany
+    {
+        return $this->foto();
     }
 
     public function konfirmasiLapangan(): HasMany
@@ -124,52 +129,17 @@ class LaporanBanjir extends Model
      */
     public function jumlahPelaporIndependen(): int
     {
-        $radius = config('alir.kepercayaan.radius_m');
-        $jam = config('alir.kepercayaan.rentang_jam');
-        $lat = (float) $this->latitude;
-        $lng = (float) $this->longitude;
-        $waktu = $this->created_at ?? now();
-        $dLat = $radius / 111_320;
-        $dLng = $radius / (111_320 * max(cos(deg2rad($lat)), 0.01));
-
-        $sekitar = self::query()
-            ->where('status', '!=', 'ditolak')
-            ->whereBetween('latitude', [$lat - $dLat, $lat + $dLat])
-            ->whereBetween('longitude', [$lng - $dLng, $lng + $dLng])
-            ->whereBetween('created_at', [$waktu->copy()->subHours($jam), $waktu->copy()->addHours($jam)])
-            ->get(['id', 'latitude', 'longitude', 'nomor_wa_pelapor'])
-            ->filter(fn ($l) => Geo::jarakMeter($lat, $lng, (float) $l->latitude, (float) $l->longitude) <= $radius);
-
-        $digabung = $this->duplikat()->where('status', '!=', 'ditolak')->get(['id', 'nomor_wa_pelapor']);
-
-        return $sekitar->concat($digabung)->push($this)->pluck('nomor_wa_pelapor')->filter()->unique()->count();
+        return app(KepercayaanLaporanService::class)->jumlahPelaporIndependen($this);
     }
 
-    /**
-     * FR-26 + FR-27: tingkat kepercayaan.
-     *  - Konfirmasi lapangan terakhir yang dijawab menentukan: sesuai -> tinggi; tidak sesuai/tidak ditemukan -> rendah
-     *  - Tanpa konfirmasi: >= laporan_tinggi pelapor independen -> tinggi, >= laporan_sedang -> sedang, selain itu rendah
-     * Foto wajib di setiap laporan (FR-05), jadi kriteria lama "1 laporan berfoto" tidak dipakai lagi.
-     */
+    /** FR-26 + FR-27: aturan kepercayaan terpusat di KepercayaanLaporanService. */
     public function hitungKepercayaan(): string
     {
-        $konfirmasi = $this->konfirmasiLapangan()->where('status', 'dijawab')->latest('dijawab_pada')->first();
-
-        if ($konfirmasi !== null) {
-            return $konfirmasi->hasil === 'sesuai' ? 'tinggi' : 'rendah';
-        }
-
-        $jumlah = $this->jumlahPelaporIndependen();
-
-        return match (true) {
-            $jumlah >= config('alir.kepercayaan.laporan_tinggi') => 'tinggi',
-            $jumlah >= config('alir.kepercayaan.laporan_sedang') => 'sedang',
-            default => 'rendah',
-        };
+        return app(KepercayaanLaporanService::class)->hitung($this);
     }
 
     public function perbaruiKepercayaan(): void
     {
-        $this->update(['tingkat_kepercayaan' => $this->hitungKepercayaan()]);
+        app(KepercayaanLaporanService::class)->hitungUlang($this);
     }
 }

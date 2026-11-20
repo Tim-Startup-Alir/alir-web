@@ -32,10 +32,10 @@ class AuditLog extends Model
         return $this->morphTo();
     }
 
-    public static function catat(string $aksi, ?Model $subjek = null, ?string $deskripsi = null, ?User $user = null): self
+    public static function catat(string $aksi, ?Model $subjek = null, ?string $deskripsi = null, ?User $user = null, bool $sistem = false): self
     {
         return self::create([
-            'user_id' => $user?->id ?? auth()->id(),
+            'user_id' => $sistem ? null : ($user?->id ?? auth()->id()),
             'aksi' => $aksi,
             'subjek_type' => $subjek?->getMorphClass(),
             'subjek_id' => $subjek?->getKey(),
