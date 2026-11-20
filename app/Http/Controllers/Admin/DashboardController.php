@@ -16,8 +16,9 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'totalWilayah' => Wilayah::count(),
             'wilayahAktif' => Wilayah::where('is_aktif', true)->count(),
-            'totalKomunitas' => KomunitasRelawan::count(),
-            'komunitasSiaga' => JadwalKesiapsiagaan::siagaPada()->distinct('komunitas_relawan_id')->count('komunitas_relawan_id'),
+            'totalKomunitas' => KomunitasRelawan::where('status_pendaftaran', 'disetujui')->count(),
+            'antreanPendaftaran' => KomunitasRelawan::siapDitinjau()->count(),
+            'komunitasSiaga' => KomunitasRelawan::siagaPada()->count(),
             'totalJadwal' => JadwalKesiapsiagaan::count(),
             'auditTerbaru' => AuditLog::with('user')->latest('waktu')->limit(8)->get(),
         ]);

@@ -61,8 +61,16 @@ class LoginRequest extends FormRequest
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
 
+            $komunitas = $user->komunitasRelawan;
+            $pesan = match (true) {
+                $komunitas && ! $user->hasVerifiedEmail() => 'Email pendaftaran Anda belum diverifikasi. Silakan klik tautan verifikasi yang dikirim ke email Anda.',
+                $komunitas?->status_pendaftaran === 'menunggu' => 'Pendaftaran komunitas Anda sedang menunggu persetujuan Tim Startup ALIR.',
+                $komunitas?->status_pendaftaran === 'ditolak' => 'Pendaftaran komunitas Anda ditolak. Silakan periksa email Anda untuk alasan dan tautan perbaikan data.',
+                default => 'Akun Anda sedang dinonaktifkan. Hubungi Tim Startup ALIR.',
+            };
+
             throw ValidationException::withMessages([
-                'email' => 'Akun Anda sedang dinonaktifkan. Hubungi Tim Startup ALIR.',
+                'email' => $pesan,
             ]);
         }
 

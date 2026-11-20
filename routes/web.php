@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\ProfilKomunitasController;
@@ -21,11 +22,27 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
+    Route::get('/daftar', [RegisteredKomunitasController::class, 'create'])->name('register');
+    Route::post('/daftar', [RegisteredKomunitasController::class, 'store'])->name('register.store');
+    Route::get('/daftar/terkirim', [RegisteredKomunitasController::class, 'sent'])->name('register.sent');
+
     Route::get('/lupa-sandi', [PasswordResetController::class, 'requestForm'])->name('password.request');
     Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-sandi/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
     Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])->name('password.update');
 });
+
+Route::get('/daftar/verifikasi-email/{id}/{hash}', [RegisteredKomunitasController::class, 'verifyEmail'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('register.verify-email');
+
+Route::get('/daftar/perbaikan/{komunitas}', [RegisteredKomunitasController::class, 'editPerbaikan'])
+    ->middleware('signed')
+    ->name('register.perbaikan.edit');
+
+Route::put('/daftar/perbaikan/{komunitas}', [RegisteredKomunitasController::class, 'updatePerbaikan'])
+    ->middleware('signed')
+    ->name('register.perbaikan.update');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -55,6 +72,9 @@ Route::prefix('admin')
             ->parameters(['komunitas' => 'komunitas'])
             ->except(['show']);
         Route::patch('komunitas/{komunitas}/status', [AdminKomunitasController::class, 'toggleStatus'])->name('komunitas.toggle-status');
+        Route::get('komunitas/{komunitas}/dokumen', [AdminKomunitasController::class, 'dokumen'])->name('komunitas.dokumen');
+        Route::post('komunitas/{komunitas}/setujui', [AdminKomunitasController::class, 'setujui'])->name('komunitas.setujui');
+        Route::post('komunitas/{komunitas}/tolak', [AdminKomunitasController::class, 'tolak'])->name('komunitas.tolak');
 
         Route::get('komunitas/{komunitas}/profil', [ProfilKomunitasController::class, 'editAdmin'])->name('profil.edit');
         Route::put('komunitas/{komunitas}/profil', [ProfilKomunitasController::class, 'updateAdmin'])->name('profil.update');

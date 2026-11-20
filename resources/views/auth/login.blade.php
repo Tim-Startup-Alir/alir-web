@@ -71,7 +71,7 @@
         </button>
 
         <div class="lg-foot">
-            <span class="muted">Akun komunitas dikelola oleh Tim Startup ALIR.</span>
+            <span>Komunitas baru? <a href="{{ route('register') }}">Daftar di sini</a></span>
             <a class="m" href="{{ url('/') }}">Kembali ke situs</a>
         </div>
     </form>

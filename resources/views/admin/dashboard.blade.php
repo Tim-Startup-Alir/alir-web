@@ -22,8 +22,13 @@
         <div class="stat hov">
             <span class="ic" style="background:var(--coral-tint);color:var(--coral-dark)"><i data-lucide="users"></i></span>
             <b>{{ $totalKomunitas }}</b>
-            <span>Komunitas terdaftar</span>
+            <span>Komunitas disetujui</span>
         </div>
+        <a href="{{ route('admin.komunitas.index') }}" class="stat hov">
+            <span class="ic" style="background:var(--amber-tint);color:var(--amber-ink)"><i data-lucide="user-check"></i></span>
+            <b>{{ $antreanPendaftaran }}</b>
+            <span>Pendaftaran menunggu</span>
+        </a>
         <div class="stat hov">
             <span class="ic" style="background:var(--teal-tint);color:var(--teal-ink)"><i data-lucide="shield-check"></i></span>
             <b>{{ $komunitasSiaga }}</b>

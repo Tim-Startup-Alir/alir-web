@@ -16,6 +16,77 @@
         </a>
     </div>
 
+    @if ($antreanPendaftaran->isNotEmpty())
+        <div class="card">
+            <div class="row between mb-4">
+                <div>
+                    <h3>Antrean Pendaftaran Baru</h3>
+                    <p class="xs muted">Pendaftar yang sudah memverifikasi email dan menunggu persetujuan Tim Startup ALIR.</p>
+                </div>
+                <span class="tag amber">{{ $antreanPendaftaran->count() }} menunggu</span>
+            </div>
+
+            <div class="col gap-3">
+                @foreach ($antreanPendaftaran as $calon)
+                    @php
+                        $poskoCalon = $calon->posko->first();
+                    @endphp
+                    <div class="p-4 rounded-2xl border border-amber-200 bg-amber-50/70 space-y-3" dusk="pendaftaran-card-{{ $calon->id }}">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <div class="font-bold text-base">{{ $calon->nama }}</div>
+                                <div class="xs muted">
+                                    Kelurahan {{ $calon->wilayah?->nama_kelurahan ?? '-' }} &middot;
+                                    PIC {{ $calon->nama_pic }} ({{ $calon->nomor_whatsapp_pic }}) &middot;
+                                    {{ $calon->user?->email }}
+                                </div>
+                                <div class="xs muted mt-1">
+                                    {{ $calon->total_anggota }} anggota (siap {{ $calon->kapasitas_max }}) &middot;
+                                    {{ $calon->jumlah_perahu }} perahu
+                                    @if ($poskoCalon)
+                                        &middot; Posko: {{ $poskoCalon->nama }} ({{ $poskoCalon->latitude }}, {{ $poskoCalon->longitude }})
+                                        @if ($poskoCalon->diLuarCakupan())
+                                            <span class="tag amber ml-1">Di luar cakupan</span>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2">
+                                @if ($calon->dokumen_pendukung_path)
+                                    <a href="{{ route('admin.komunitas.dokumen', $calon) }}" target="_blank" class="btn btn-ghost btn-sm" dusk="dokumen-komunitas-{{ $calon->id }}">
+                                        <i data-lucide="file-text"></i>Dokumen
+                                    </a>
+                                @endif
+                                <form method="POST" action="{{ route('admin.komunitas.setujui', $calon) }}">
+                                    @csrf
+                                    <button type="submit" class="btn btn-teal btn-sm" dusk="setujui-komunitas-{{ $calon->id }}">
+                                        Setujui
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="{{ route('admin.komunitas.tolak', $calon) }}" class="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-200/80">
+                            @csrf
+                            <input
+                                type="text"
+                                name="alasan_tolak_registrasi"
+                                class="input flex-1 min-w-[240px]"
+                                style="height:38px"
+                                placeholder="Tulis alasan penolakan / catatan perbaikan..."
+                                required
+                            >
+                            <button type="submit" class="btn btn-red btn-sm" dusk="tolak-komunitas-{{ $calon->id }}">
+                                Tolak &amp; Kirim Perbaikan
+                            </button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="card">
         <form method="GET" action="{{ route('admin.komunitas.index') }}" class="flex flex-wrap items-center gap-3 mb-5">
             <input
@@ -125,4 +196,38 @@
             </div>
         @endif
     </div>
+
+    @if ($pendaftaranDitolak->isNotEmpty())
+        <div class="card">
+            <div class="row between mb-3">
+                <h3>Pendaftaran Ditolak (Menunggu Perbaikan)</h3>
+                <span class="tag red">{{ $pendaftaranDitolak->count() }}</span>
+            </div>
+            <div class="tbl-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Komunitas &amp; Email</th>
+                            <th>Kelurahan</th>
+                            <th>Alasan Penolakan</th>
+                            <th>Ditolak Pada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($pendaftaranDitolak as $ditolak)
+                            <tr>
+                                <td>
+                                    <div class="font-bold">{{ $ditolak->nama }}</div>
+                                    <div class="xs muted">{{ $ditolak->user?->email }}</div>
+                                </td>
+                                <td>{{ $ditolak->wilayah?->nama_kelurahan ?? '-' }}</td>
+                                <td class="small">{{ $ditolak->alasan_tolak_registrasi }}</td>
+                                <td class="xs muted">{{ $ditolak->diverifikasi_pada?->format('d M Y H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
 @endsection

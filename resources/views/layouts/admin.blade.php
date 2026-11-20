@@ -48,8 +48,14 @@
                         </a>
                     @endif
                     @if (Route::has('admin.komunitas.index'))
+                        @php
+                            $jumlahAntreanKomunitas = \App\Models\KomunitasRelawan::siapDitinjau()->count();
+                        @endphp
                         <a href="{{ route('admin.komunitas.index') }}" class="{{ request()->routeIs('admin.komunitas.*') ? 'on' : '' }}">
                             <i data-lucide="users"></i>Komunitas Relawan
+                            @if ($jumlahAntreanKomunitas > 0)
+                                <span class="badge">{{ $jumlahAntreanKomunitas }}</span>
+                            @endif
                         </a>
                     @endif
                     @if (Route::has('admin.jadwal.index'))
