@@ -88,3 +88,21 @@ Thresholds can be adjusted after trials. Photos do not raise confidence by defau
 `admin.peta-laporan.sekitar` now fills `laporan.kepercayaan` and each nearby item's `kepercayaan` with `level`, `alasan`, `jumlah_pelapor_independen`, `konfirmasi`, and `ambang`. Marker filtering accepts `kepercayaan[]` with `tinggi`, `sedang`, or `rendah`. The map shows a confidence badge in the detail panel, nearby cards, and marker popup; the detail panel includes the reasons and confirmation summary. The read-only “Aturan penilaian” card reflects current config values and names `.env` as their source.
 
 Backfill null levels with `php artisan alir:hitung-kepercayaan`; pass `--semua` to recompute every report. The command processes rows in chunks of 100 and prints progress. Demo flow: run `php artisan db:seed --class=Database\\Seeders\\LaporanDemoSeeder`, then `php artisan alir:hitung-kepercayaan --semua`.
+
+## PBI-009: Konfirmasi Lapangan Komunitas
+
+Komunitas berstatus aktif dan sudah memverifikasi email dapat menjawab laporan berstatus `menunggu_verifikasi`, `terverifikasi`, `ditugaskan`, atau `ditangani` jika ada permintaan `diminta` untuk komunitas tersebut, penugasan yang belum `ditolak`/`dibatalkan`, atau posko komunitas berada dalam radius terdekat. Radius default 3.000 meter dan dapat disetel dengan `ALIR_KONFIRMASI_RADIUS_M`. Penentuan jarak memakai `Geo::jarakMeter()` setelah prefilter bounding box. Ini definisi operasional untuk istilah "terdekat" yang belum ditentukan proposal.
+
+| Route name | Method dan URL | Fungsi |
+| --- | --- | --- |
+| `komunitas.konfirmasi.index` | `GET /komunitas/konfirmasi-lapangan` | Daftar permintaan dan laporan dari penugasan/posko terdekat. |
+| `komunitas.konfirmasi.show` | `GET /komunitas/konfirmasi-lapangan/{laporan}` | Detail aman, foto laporan privat, peta mini, dan formulir jawaban. |
+| `komunitas.konfirmasi.store` | `POST /komunitas/konfirmasi-lapangan/{laporan}` | Kirim hasil dan foto bukti; dibatasi 10 permintaan per menit. |
+| `komunitas.konfirmasi.foto-laporan` | `GET /komunitas/konfirmasi-lapangan/{laporan}/foto/{foto}` | Streaming foto laporan setelah otorisasi dan pemeriksaan kepemilikan. |
+| `admin.konfirmasi.foto` | `GET /admin/peta-laporan/{laporan}/konfirmasi/{konfirmasi}` | Streaming foto bukti admin, dengan scoped binding dan pemeriksaan kepemilikan. |
+
+Pilihan hasil adalah `sesuai`, `tidak_sesuai`, atau `tidak_ditemukan`; foto JPG/JPEG/PNG wajib dan catatan opsional maksimal 500 karakter. Foto bukti disimpan di disk privat `local`, folder `konfirmasi-lapangan`. Komunitas hanya dapat menjawab sekali per laporan. Dalam transaksi, service mengunci laporan dan komunitas, memeriksa ulang hak akses, lalu mengubah baris `diminta` menjadi `dijawab` atau membuat jawaban baru. Kegagalan transaksi menghapus berkas yang sudah tersimpan.
+
+`App\\Services\\KonfirmasiLapanganService::bolehMengonfirmasi()` dan `laporanUntuk()` adalah sumber aturan akses. Gunakan `kirim($komunitas, $laporan, $hasil, $foto, $catatan, $pelaku)` untuk jawaban. Fitur admin dapat memanggil `mintaKonfirmasi($laporan, $komunitas, $admin)` untuk membuat permintaan; method itu menolak permintaan/jawaban duplikat dan mencatat audit `konfirmasi.minta`. Jawaban mencatat `konfirmasi.jawab`, lalu memanggil `KepercayaanLaporanService::hitungUlang()`: `sesuai` memberi tingkat tinggi, sedangkan `tidak_sesuai` dan `tidak_ditemukan` memberi rendah sesuai aturan PBI-008. Status `diminta` tidak mengubah tingkat kepercayaan.
+
+Config baru: `ALIR_KONFIRMASI_RADIUS_M=3000` dan `ALIR_KONFIRMASI_FOTO_MAKS_KB=5120`. Tampilan komunitas hanya memilih atribut laporan yang aman. Nama, nomor WhatsApp, dan persetujuan kontak pelapor tidak dimuat untuk komunitas maupun payload peta admin. URL foto memakai ID route dan penyimpanan privat, tanpa menerima path dari input pengguna.

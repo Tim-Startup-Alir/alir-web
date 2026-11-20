@@ -73,6 +73,12 @@ class LaporanBanjir extends Model
         return $this->hasMany(KonfirmasiLapangan::class);
     }
 
+    // F-03 Pemetaan Titik Banjir: relationship name for scoped {konfirmasi} route binding.
+    public function konfirmasis(): HasMany
+    {
+        return $this->konfirmasiLapangan();
+    }
+
     public function penugasan(): HasMany
     {
         return $this->hasMany(Penugasan::class);

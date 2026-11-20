@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
+use App\Http\Controllers\Admin\KonfirmasiLapanganController as AdminKonfirmasiLapanganController;
 use App\Http\Controllers\Admin\PetaLaporanController;
 use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
+use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
 use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +73,8 @@ Route::prefix('admin')
         Route::get('peta-laporan/data', [PetaLaporanController::class, 'data'])->middleware('throttle:60,1')->name('peta-laporan.data');
         Route::get('peta-laporan/{laporan}/sekitar', [PetaLaporanController::class, 'sekitar'])->middleware('throttle:60,1')->name('peta-laporan.sekitar');
         Route::get('laporan/{laporan}/foto/{foto}', [PetaLaporanController::class, 'foto'])->scopeBindings()->name('laporan.foto');
+        Route::get('peta-laporan/{laporan}/konfirmasi/{konfirmasi}', [AdminKonfirmasiLapanganController::class, 'foto'])
+            ->scopeBindings()->middleware('throttle:60,1')->name('konfirmasi.foto');
 
         Route::resource('wilayah', AdminWilayahController::class)->except(['show']);
         Route::patch('wilayah/{wilayah}/status', [AdminWilayahController::class, 'toggleStatus'])->name('wilayah.toggle-status');
@@ -97,6 +101,14 @@ Route::prefix('komunitas')
     ->middleware(['auth', 'verified', 'password.changed', 'role:komunitas_relawan'])
     ->group(function () {
         Route::get('/', [KomunitasDashboardController::class, 'index'])->name('dashboard');
+
+        // F-03 Pemetaan Titik Banjir
+        Route::get('konfirmasi-lapangan', [KomunitasKonfirmasiLapanganController::class, 'index'])->name('konfirmasi.index');
+        Route::get('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'show'])->name('konfirmasi.show');
+        Route::post('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'store'])
+            ->middleware('throttle:10,1')->name('konfirmasi.store');
+        Route::get('konfirmasi-lapangan/{laporan}/foto/{foto}', [KomunitasKonfirmasiLapanganController::class, 'fotoLaporan'])
+            ->scopeBindings()->name('konfirmasi.foto-laporan');
 
         Route::get('profil/{komunitas?}', [ProfilKomunitasController::class, 'editKomunitas'])->name('profil.edit');
         Route::put('profil/{komunitas?}', [ProfilKomunitasController::class, 'updateKomunitas'])->name('profil.update');

@@ -30,6 +30,12 @@ return [
         'foto_menaikkan_ke_sedang' => (bool) env('ALIR_KEPERCAYAAN_FOTO_SEDANG', false),
     ],
 
+    // F-03 Pemetaan Titik Banjir
+    'konfirmasi' => [
+        'radius_terdekat_m' => (int) env('ALIR_KONFIRMASI_RADIUS_M', 3000),
+        'foto_maks_kb' => (int) env('ALIR_KONFIRMASI_FOTO_MAKS_KB', 5120),
+    ],
+
     // FR-24: radius cadangan cakupan kelurahan bila batas_wilayah (GeoJSON) belum diisi
     'wilayah' => [
         'radius_cakupan_default_m' => (int) env('ALIR_RADIUS_CAKUPAN_M', 1500),

@@ -19,7 +19,22 @@ class LaporanSekitarResource extends JsonResource
             'tingkat_kepercayaan' => $analisis['level'], 'catatan' => $this->catatan,
             'dibuat_pada' => $this->created_at?->toIso8601String(),
             'foto' => $this->foto->map(fn ($foto) => ['id' => $foto->id, 'url' => route('admin.laporan.foto', [$this->id, $foto->id])])->values(),
-            'kepercayaan' => $analisis, 'konfirmasi' => [],
+            'kepercayaan' => $analisis,
+            'konfirmasi' => $this->resource->relationLoaded('konfirmasiLapangan')
+                ? $this->konfirmasiLapangan
+                    ->where('status', 'dijawab')
+                    ->sortByDesc('dijawab_pada')
+                    ->values()
+                    ->map(fn ($konfirmasi) => [
+                        'hasil' => $konfirmasi->hasil,
+                        'komunitas' => $konfirmasi->komunitasRelawan?->nama,
+                        'waktu' => $konfirmasi->dijawab_pada?->toIso8601String(),
+                        'catatan' => $konfirmasi->catatan,
+                        'foto_url' => filled($konfirmasi->foto_path)
+                            ? route('admin.konfirmasi.foto', [$this->id, $konfirmasi->id])
+                            : null,
+                    ])
+                : [],
             ...($this->resource->getAttribute('jarak_m') !== null ? ['jarak_m' => $this->jarak_m, 'selisih_menit' => $this->selisih_menit] : []),
         ];
     }

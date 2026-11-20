@@ -15,6 +15,7 @@
 @php
     $komunitasAkun = auth()->user()->komunitasRelawan;
     $namaKomunitas = $komunitasAkun?->nama ?? auth()->user()->name;
+    $jumlahKonfirmasiDiminta = $komunitasAkun?->konfirmasiLapangan()->where('status', 'diminta')->count() ?? 0;
 @endphp
 <div class="side-backdrop" id="side-backdrop"></div>
 <div class="shell">
@@ -42,6 +43,13 @@
         @if (Route::has('komunitas.jadwal.index'))
             <a href="{{ route('komunitas.jadwal.index') }}" class="{{ request()->routeIs('komunitas.jadwal.*') ? 'on' : '' }}">
                 <i data-lucide="calendar-clock"></i>Jadwal Siaga
+            </a>
+        @endif
+        {{-- F-03 Pemetaan Titik Banjir --}}
+        @if (Route::has('komunitas.konfirmasi.index'))
+            <a href="{{ route('komunitas.konfirmasi.index') }}" class="{{ request()->routeIs('komunitas.konfirmasi.*') ? 'on' : '' }}" aria-label="Konfirmasi Lapangan, {{ $jumlahKonfirmasiDiminta }} permintaan menunggu">
+                <i data-lucide="map-pinned"></i>Konfirmasi Lapangan
+                @if ($jumlahKonfirmasiDiminta > 0)<span class="tag amber" aria-label="{{ $jumlahKonfirmasiDiminta }} permintaan menunggu">{{ $jumlahKonfirmasiDiminta }}</span>@endif
             </a>
         @endif
 

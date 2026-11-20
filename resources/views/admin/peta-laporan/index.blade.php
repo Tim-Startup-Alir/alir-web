@@ -89,7 +89,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if(report.kepercayaan.konfirmasi){const confirmation=report.kepercayaan.konfirmasi;const waktu=confirmation.waktu?new Date(confirmation.waktu).toLocaleString('id-ID'):'waktu tidak tercatat';section.append(text('p',`Konfirmasi ${statusLabel(confirmation.hasil)} oleh ${confirmation.komunitas || 'komunitas'} pada ${waktu}.`));}
             selectedNode.append(section);
         }
-        if (report.konfirmasi?.length) { const section=document.createElement('section'); section.append(text('h4','Konfirmasi lapangan')); report.konfirmasi.forEach(item=>section.append(text('p',item.hasil || item.status || JSON.stringify(item)))); selectedNode.append(section); }
+        if (report.konfirmasi?.length) {
+            const section=document.createElement('section'); section.append(text('h4','Konfirmasi lapangan'));
+            report.konfirmasi.forEach(item=>{
+                const entry=document.createElement('article'); entry.className='peta-confirmation';
+                const waktu=item.waktu?new Date(item.waktu).toLocaleString('id-ID'):'waktu tidak tercatat';
+                entry.append(text('p',`Hasil: ${statusLabel(item.hasil)} · ${item.komunitas || 'komunitas'} · ${waktu}`));
+                if(item.catatan) entry.append(text('p',item.catatan));
+                if(item.foto_url){const link=document.createElement('a');link.setAttribute('href',item.foto_url);link.setAttribute('target','_blank');link.setAttribute('rel','noopener');link.textContent='Lihat foto bukti';entry.append(link);}
+                section.append(entry);
+            });
+            selectedNode.append(section);
+        }
     }
     function renderNearby(items) {
         nearbyNode.replaceChildren(); nearbyMarkers.forEach(marker=>{map.removeLayer(marker);markerIndex.forEach((indexed,id)=>{if(indexed===marker) markerIndex.delete(id);});}); nearbyMarkers.length=0; const statuses=[...statusFilter.selectedOptions].map(option=>option.value); const wilayahName=wilayahFilter.selectedOptions[0]?.textContent.trim(); const levels=[...confidenceFilter.selectedOptions].map(option=>option.value); const visibleItems=items.filter(item=>(!statuses.length||statuses.includes(item.status))&&(!wilayahFilter.value||item.wilayah===wilayahName)&&(!levels.length||levels.includes(item.kepercayaan?.level||item.tingkat_kepercayaan))); if (!visibleItems.length) { nearbyNode.append(text('p',items.length?'Tidak ada laporan sekitar yang sesuai filter.':'Tidak ada laporan lain dalam radius dan rentang waktu ini.','empty')); return; }
