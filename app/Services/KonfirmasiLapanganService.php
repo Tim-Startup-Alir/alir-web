@@ -68,7 +68,8 @@ class KonfirmasiLapanganService
             return collect();
         }
 
-        return LaporanBanjir::query()
+        /** @var Collection<int, LaporanBanjir> $laporan */
+        $laporan = LaporanBanjir::query()
             ->select(['id', 'kode_pelacakan', 'wilayah_id', 'alamat_singkat', 'latitude', 'longitude', 'severity', 'jumlah_warga', 'status', 'tingkat_kepercayaan', 'created_at'])
             ->whereIn('id', $ids)
             ->whereIn('status', self::STATUS_LAPORAN)
@@ -76,11 +77,14 @@ class KonfirmasiLapanganService
                 ->where('komunitas_relawan_id', $idKomunitas)->where('status', 'dijawab'))
             ->with(['wilayah:id,nama_kelurahan', 'foto:id,laporan_banjir_id,foto_path,urutan'])
             ->orderByDesc('created_at')
-            ->get()
-            ->each(function (LaporanBanjir $laporan) use ($idsDiminta, $jarakPosko): void {
-                $laporan->setAttribute('konfirmasi_diminta', in_array((int) $laporan->id, $idsDiminta, true));
-                $laporan->setAttribute('jarak_posko_m', $jarakPosko[$laporan->id] ?? null);
-            });
+            ->get();
+
+        foreach ($laporan as $item) {
+            $item->setAttribute('konfirmasi_diminta', in_array((int) $item->id, $idsDiminta, true));
+            $item->setAttribute('jarak_posko_m', $jarakPosko[$item->id] ?? null);
+        }
+
+        return $laporan;
     }
 
     public function kirim(

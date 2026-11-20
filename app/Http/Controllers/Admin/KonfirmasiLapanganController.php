@@ -17,6 +17,28 @@ class KonfirmasiLapanganController extends Controller
         $path = $konfirmasi->foto_path;
         abort_if(blank($path) || ! Storage::disk('local')->exists($path), 404, 'Foto bukti tidak ditemukan.');
 
-        return Storage::disk('local')->response($path);
+        $stream = Storage::disk('local')->readStream($path);
+        abort_unless(is_resource($stream), 404, 'Foto bukti tidak ditemukan.');
+
+        return response()->stream(function () use ($stream): void {
+            try {
+                fpassthru($stream);
+            } finally {
+                fclose($stream);
+            }
+        }, 200, [
+            'Content-Type' => $this->contentType($path),
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function contentType(string $path): string
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'application/octet-stream',
+        };
     }
 }
