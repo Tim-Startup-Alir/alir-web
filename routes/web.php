@@ -1,7 +1,78 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
+use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
+use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\ForcePasswordChangeController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
+use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
+use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::get('/lupa-sandi', [PasswordResetController::class, 'requestForm'])->name('password.request');
+    Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-sandi/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
+    Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])->name('password.update');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    Route::get('/ganti-sandi', [ForcePasswordChangeController::class, 'edit'])->name('password.force.edit');
+    Route::put('/ganti-sandi', [ForcePasswordChangeController::class, 'update'])->name('password.force.update');
+
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'password.changed', 'role:admin'])
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('wilayah', AdminWilayahController::class)->except(['show']);
+        Route::patch('wilayah/{wilayah}/status', [AdminWilayahController::class, 'toggleStatus'])->name('wilayah.toggle-status');
+
+        Route::resource('komunitas', AdminKomunitasController::class)
+            ->parameters(['komunitas' => 'komunitas'])
+            ->except(['show']);
+        Route::patch('komunitas/{komunitas}/status', [AdminKomunitasController::class, 'toggleStatus'])->name('komunitas.toggle-status');
+
+        Route::get('komunitas/{komunitas}/profil', [ProfilKomunitasController::class, 'editAdmin'])->name('profil.edit');
+        Route::put('komunitas/{komunitas}/profil', [ProfilKomunitasController::class, 'updateAdmin'])->name('profil.update');
+
+        Route::resource('jadwal-kesiapsiagaan', AdminJadwalController::class)
+            ->names('jadwal')
+            ->parameters(['jadwal-kesiapsiagaan' => 'jadwal'])
+            ->except(['show']);
+    });
+
+Route::prefix('komunitas')
+    ->name('komunitas.')
+    ->middleware(['auth', 'verified', 'password.changed', 'role:komunitas_relawan'])
+    ->group(function () {
+        Route::get('/', [KomunitasDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('profil/{komunitas?}', [ProfilKomunitasController::class, 'editKomunitas'])->name('profil.edit');
+        Route::put('profil/{komunitas?}', [ProfilKomunitasController::class, 'updateKomunitas'])->name('profil.update');
+
+        Route::get('jadwal-kesiapsiagaan', [KomunitasJadwalController::class, 'index'])->name('jadwal.index');
+    });
