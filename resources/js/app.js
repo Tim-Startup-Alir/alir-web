@@ -1,1 +1,1 @@
-//
+import './alir-ui';

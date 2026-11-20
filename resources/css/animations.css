@@ -1,0 +1,46 @@
+/* ===== Animasi: mengikuti mockup ALIR ===== */
+:root{--ease:cubic-bezier(.2,.8,.2,1)}
+
+@keyframes alirUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes panelUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes alirFade{from{opacity:0}to{opacity:1}}
+@keyframes alirPing{0%{transform:scale(.7);opacity:.9}100%{transform:scale(2);opacity:0}}
+@keyframes alirPulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes alirSpin{to{transform:rotate(360deg)}}
+@keyframes alirTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes cwFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes eduBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes eduPop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes eduFill{from{width:0}to{width:100%}}
+@keyframes eduBurst{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(540deg);opacity:0}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes waveSlide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes ping{0%{transform:scale(.7);opacity:.9}100%{transform:scale(2);opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@keyframes fillGrow{from{width:0}to{width:100%}}
+@keyframes burst{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(540deg);opacity:0}}
+@keyframes slideL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes dropIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+
+/* air naik di hero */
+.hw{position:absolute;left:0;right:0;bottom:0;height:0;transition:height 2.8s var(--ease);pointer-events:none;z-index:0}
+.hw .l{position:absolute;left:0;right:0;overflow:hidden}
+.hw .l svg{position:absolute;left:0;bottom:0;width:200%}
+.hw .l1{top:-46px;height:50px}.hw .l1 svg{height:50px;animation:alirTicker 18s linear infinite}
+.hw .l2{top:-30px;height:34px}.hw .l2 svg{height:34px;animation:alirTicker 11s linear infinite reverse}
+.hw .body{position:absolute;inset:0;background:linear-gradient(180deg,rgba(86,156,235,.22),rgba(86,156,235,.08))}
+.hw .l3{bottom:-2px;height:60px}.hw .l3 svg{height:60px;animation:alirTicker 7s linear infinite}
+
+/* penanda dan titik hidup */
+.ping-dot{position:relative;display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red)}
+.ping-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;animation:alirPing 1.8s ease-out infinite}
+.live-dot{animation:alirPulse 1.2s ease-in-out infinite}
+.bob{animation:cwFloat 4s ease-in-out infinite}
+
+.panel-anim>*{animation:panelUp .35s both}

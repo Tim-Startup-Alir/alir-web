@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +14,24 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'password.changed' => EnsurePasswordChanged::class,
+        ]);
+
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+
+            if ($user?->isAdmin()) {
+                return route('admin.dashboard');
+            }
+
+            if ($user?->isKomunitas()) {
+                return route('komunitas.dashboard');
+            }
+
+            return '/';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
