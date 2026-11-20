@@ -9,6 +9,7 @@ use Database\Seeders\UserSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
 
 uses(DatabaseTruncation::class);
 
@@ -33,7 +34,9 @@ test('admin sees confidence levels, rationale, configurable thresholds and confi
     LaporanBanjirFactory::new()->dekatDari($tinggi, 90)->create(['wilayah_id' => $wilayah->id]);
     $admin = User::where('email', 'admin@alir.test')->firstOrFail();
 
-    $this->browse(function (Browser $browser) use ($admin, $rendah, $sedang, $tinggi) {
+    /** @var DuskTestCase $dusk */
+    $dusk = $this;
+    $dusk->browse(function (Browser $browser) use ($admin, $rendah, $sedang, $tinggi) {
         $browser->loginAs($admin)->visit("/admin/peta-laporan?laporan={$rendah->id}")
             ->waitFor('.leaflet-container', 15)->waitForText('Dasar penilaian', 20)
             ->assertSee('Rendah')->assertSee('1 pelapor independen');
