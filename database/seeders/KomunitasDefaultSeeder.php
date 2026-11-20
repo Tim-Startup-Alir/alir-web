@@ -78,13 +78,6 @@ class KomunitasDefaultSeeder extends Seeder
                     ],
                 );
 
-                foreach (['Evakuasi air' => 8, 'Pertolongan pertama (P3K)' => 5, 'Dapur umum' => 6] as $nama => $jumlah) {
-                    $profil->keterampilan()->updateOrCreate(
-                        ['nama_keterampilan' => $nama],
-                        ['jumlah_anggota_terampil' => $jumlah],
-                    );
-                }
-
                 $profil->jadwalKesiapsiagaan()->delete();
                 foreach (JadwalKesiapsiagaan::HARI as $hari) {
                     foreach ($shift as $s) {

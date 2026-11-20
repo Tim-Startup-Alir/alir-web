@@ -33,6 +33,44 @@ class KomunitasRelawan extends Model
     }
 
     /**
+     * Komunitas aktif: pendaftaran disetujui DAN akun user aktif (kontrak F5).
+     */
+    #[Scope]
+    protected function aktif(Builder $query): void
+    {
+        $query->where('status_pendaftaran', 'disetujui')
+            ->whereHas('user', fn (Builder $q) => $q->where('is_active', true));
+    }
+
+    /**
+     * Komunitas aktif yang memiliki shift kesiapsiagaan berjalan pada waktu tertentu (kontrak F5).
+     */
+    #[Scope]
+    protected function siagaPada(Builder $query, ?CarbonInterface $waktu = null): void
+    {
+        $query->aktif()
+            ->whereHas('jadwalKesiapsiagaan', fn (Builder $q) => $q->siagaPada($waktu));
+    }
+
+    /**
+     * F4 / A2: komunitas dianggap sedang dipakai bila memiliki penugasan, inventaris, atau konfirmasi lapangan.
+     */
+    public function isInUse(): bool
+    {
+        return $this->penugasan()->exists()
+            || $this->inventaris()->exists()
+            || $this->konfirmasiLapangan()->exists();
+    }
+
+    /**
+     * A4: posko utama adalah posko dengan ID terkecil milik komunitas.
+     */
+    public function poskoUtama(): ?Posko
+    {
+        return $this->posko()->orderBy('id')->first();
+    }
+
+    /**
      * Antrean verifikasi Tim Startup ALIR (FR-02): status menunggu DAN email pendaftar sudah diverifikasi.
      */
     #[Scope]
@@ -86,11 +124,6 @@ class KomunitasRelawan extends Model
     public function wilayah(): BelongsTo
     {
         return $this->belongsTo(Wilayah::class);
-    }
-
-    public function keterampilan(): HasMany
-    {
-        return $this->hasMany(KomunitasKeterampilan::class);
     }
 
     public function jadwalKesiapsiagaan(): HasMany
