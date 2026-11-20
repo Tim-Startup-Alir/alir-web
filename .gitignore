@@ -3,6 +3,10 @@
 .env
 .env.backup
 .env.production
+.env.dusk.*
+.env.testing
+/tests/Browser/screenshots/
+/tests/Browser/console/
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -26,3 +30,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /reference/
+/docs/
+/mockup-alir/
