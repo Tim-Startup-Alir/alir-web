@@ -31,14 +31,27 @@
             <i data-lucide="layout-dashboard"></i>Ringkasan
         </a>
 
-        {{-- F-03 Pemetaan Titik Banjir --}}
-        <div class="ng {{ request()->routeIs('admin.peta-laporan.*') ? 'open has-on' : '' }}">
-            <button type="button" class="ng-h" aria-expanded="{{ request()->routeIs('admin.peta-laporan.*') ? 'true' : 'false' }}">
+        @php
+            $laporanMenuActive = request()->routeIs('admin.peta-laporan.*', 'admin.penugasan.*');
+            $jumlahBelumDitugaskan = \App\Models\LaporanBanjir::query()
+                ->where('status', 'terverifikasi')
+                ->whereDoesntHave('penugasan', fn ($query) => $query->whereIn('stage', \App\Models\Penugasan::STAGE_AKTIF))
+                ->count();
+        @endphp
+        <div class="ng {{ $laporanMenuActive ? 'open has-on' : '' }}">
+            <button type="button" class="ng-h" aria-expanded="{{ $laporanMenuActive ? 'true' : 'false' }}">
                 <i data-lucide="map-pinned"></i><span>Laporan</span><i data-lucide="chevron-down" class="chev"></i>
             </button>
             <div class="ng-b"><div>
                 <a href="{{ route('admin.peta-laporan.index') }}" class="{{ request()->routeIs('admin.peta-laporan.*') ? 'on' : '' }}">
                     <i data-lucide="map"></i>Peta Laporan
+                </a>
+                <a href="{{ route('admin.penugasan.index') }}" class="{{ request()->routeIs('admin.penugasan.*') ? 'on' : '' }}"
+                    aria-label="Penugasan Relawan, {{ $jumlahBelumDitugaskan }} laporan belum ditugaskan">
+                    <i data-lucide="users"></i>Penugasan Relawan
+                    @if ($jumlahBelumDitugaskan > 0)
+                        <span class="badge">{{ $jumlahBelumDitugaskan }}</span>
+                    @endif
                 </a>
             </div></div>
         </div>

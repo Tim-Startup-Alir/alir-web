@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
 use App\Http\Controllers\Admin\KonfirmasiLapanganController as AdminKonfirmasiLapanganController;
+use App\Http\Controllers\Admin\PenugasanRelawanController as AdminPenugasanRelawanController;
 use App\Http\Controllers\Admin\PetaLaporanController;
 use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
+use App\Http\Controllers\Komunitas\PenugasanRelawanController as KomunitasPenugasanRelawanController;
 use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +70,13 @@ Route::prefix('admin')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+        // F-05 Rekomendasi dan penugasan relawan
+        Route::get('penugasan-relawan', [AdminPenugasanRelawanController::class, 'index'])->name('penugasan.index');
+        Route::post('laporan/{laporan}/penugasan', [AdminPenugasanRelawanController::class, 'store'])->name('penugasan.store');
+        Route::patch('penugasan/{penugasan}', [AdminPenugasanRelawanController::class, 'update'])->name('penugasan.update');
+        Route::post('penugasan/{penugasan}/batalkan', [AdminPenugasanRelawanController::class, 'batalkan'])->name('penugasan.batalkan');
+        Route::post('penugasan/{penugasan}/alihkan', [AdminPenugasanRelawanController::class, 'alihkan'])->name('penugasan.alihkan');
+
         // F-03 Pemetaan Titik Banjir
         Route::get('peta-laporan', [PetaLaporanController::class, 'index'])->name('peta-laporan.index');
         Route::get('peta-laporan/data', [PetaLaporanController::class, 'data'])->middleware('throttle:60,1')->name('peta-laporan.data');
@@ -109,6 +118,11 @@ Route::prefix('komunitas')
             ->middleware('throttle:10,1')->name('konfirmasi.store');
         Route::get('konfirmasi-lapangan/{laporan}/foto/{foto}', [KomunitasKonfirmasiLapanganController::class, 'fotoLaporan'])
             ->scopeBindings()->name('konfirmasi.foto-laporan');
+
+        // F-05 Penugasan yang diterima komunitas
+        Route::get('penugasan', [KomunitasPenugasanRelawanController::class, 'index'])->name('penugasan.index');
+        Route::post('penugasan/{penugasan}/respon', [KomunitasPenugasanRelawanController::class, 'respon'])
+            ->name('penugasan.respon');
 
         Route::get('profil/{komunitas?}', [ProfilKomunitasController::class, 'editKomunitas'])->name('profil.edit');
         Route::put('profil/{komunitas?}', [ProfilKomunitasController::class, 'updateKomunitas'])->name('profil.update');
