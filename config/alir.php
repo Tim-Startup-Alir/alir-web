@@ -36,6 +36,14 @@ return [
         'foto_maks_kb' => (int) env('ALIR_KONFIRMASI_FOTO_MAKS_KB', 5120),
     ],
 
+    // F-02 Pelaporan Banjir (PBI-004)
+    'laporan' => [
+        'foto_maks_kb' => (int) env('ALIR_LAPORAN_FOTO_MAKS_KB', 5120),
+        // NFR-02: batas kirim laporan per IP
+        'batas_per_menit' => (int) env('ALIR_LAPORAN_BATAS_PER_MENIT', 5),
+        'batas_per_jam' => (int) env('ALIR_LAPORAN_BATAS_PER_JAM', 20),
+    ],
+
     // FR-24: radius cadangan cakupan kelurahan bila batas_wilayah (GeoJSON) belum diisi
     'wilayah' => [
         'radius_cakupan_default_m' => (int) env('ALIR_RADIUS_CAKUPAN_M', 1500),
