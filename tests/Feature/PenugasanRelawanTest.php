@@ -59,6 +59,51 @@ function kandidatSiaga(LaporanBanjir $laporan): array
         ->first(fn (array $candidate) => $candidate['bisa_ditugaskan']);
 }
 
+test('admin dashboard opens with soft-deleted assignment scope enabled', function () {
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard'))
+        ->assertOk();
+});
+
+test('admin view edit and delete controls are present for every assignment status', function () {
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $statuses = ['menunggu', 'diterima', 'ditolak', 'menuju_lokasi', 'ditangani', 'selesai', 'dibatalkan'];
+    $penugasan = collect();
+
+    foreach ($statuses as $status) {
+        $laporan = laporanUntukPenugasan();
+        $penugasan->push(Penugasan::create([
+            'laporan_banjir_id' => $laporan->id,
+            'komunitas_relawan_id' => $komunitas->id,
+            'ditugaskan_oleh' => $admin->id,
+            'jumlah_personil_tugas' => 2,
+            'stage' => $status,
+            'alasan_tolak' => $status === 'ditolak' ? 'Kendala personel.' : null,
+        ]));
+    }
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
+        ->assertOk();
+
+    foreach ($penugasan as $tugas) {
+        $response->assertSee('lihat-penugasan-'.$tugas->id, false)
+            ->assertSee('edit-penugasan-'.$tugas->id, false)
+            ->assertSee('hapus-penugasan-'.$tugas->id, false)
+            ->assertSee('Informasi laporan')
+            ->assertSee('Penugasan saat ini')
+            ->assertSee('Komunitas penerima');
+
+        $this->get(route('admin.penugasan.show', $tugas))
+            ->assertOk()
+            ->assertSee('P-'.$tugas->laporanBanjir->kode_pelacakan)
+            ->assertSee(ucfirst(str_replace('_', ' ', $tugas->stage)));
+    }
+});
+
 test('admin page shows actual reports and assignment status tabs', function () {
     $belumDitugaskan = laporanUntukPenugasan();
     $belumDitugaskan->update(['severity' => 'berat']);
@@ -78,7 +123,11 @@ test('admin page shows actual reports and assignment status tabs', function () {
 
     $response->assertOk()
         ->assertSee('LAPORAN')
-        ->assertSee('Rekomendasi komunitas diurutkan berdasarkan jarak (Haversine). ETA dihitung 15 km/jam.')
+        ->assertSee('Kelola laporan banjir dan pilih komunitas relawan yang tepat untuk penanganan.')
+        ->assertDontSee('Haversine')
+        ->assertSee('data-lucide="clock"', false)
+        ->assertSee('data-lucide="users"', false)
+        ->assertSee('data-lucide="triangle-alert"', false)
         ->assertSee('P-'.$belumDitugaskan->kode_pelacakan.' &middot; Tirto', false)
         ->assertSee('<strong>'.$belumDitugaskan->jumlah_warga.'</strong> warga', false)
         ->assertSee('tag red">Keparahan Berat', false)
@@ -87,6 +136,8 @@ test('admin page shows actual reports and assignment status tabs', function () {
         ->assertSee('name="jumlah_personil_tugas" min="1"', false)
         ->assertSee('name="armada_perahu_tugas" min="0"', false)
         ->assertSee('name="catatan"', false)
+        ->assertSee('class="report-action-button" data-toggle-recommendations', false)
+        ->assertSee('Lihat rekomendasi')
         ->assertSee('Rekomendasi terbaik')
         ->assertSee('sisa ')
         ->assertDontSee('class="task-section"', false)
@@ -109,6 +160,7 @@ test('admin page shows actual reports and assignment status tabs', function () {
         ->assertDontSee('id="laporan-'.$belumDitugaskan->id.'"', false)
         ->assertDontSee('class="groups"', false)
         ->assertDontSee('class="candidate-list"', false)
+        ->assertSee('Lihat penugasan')
         ->assertSee('lihat-penugasan-'.$penugasan->id, false)
         ->assertSee('edit-penugasan-'.$penugasan->id, false)
         ->assertSee('hapus-penugasan-'.$penugasan->id, false);
@@ -130,8 +182,12 @@ test('admin can assign an eligible community and the in-app notification is pers
 
     $penugasan = Penugasan::where('laporan_banjir_id', $laporan->id)->firstOrFail();
     expect($penugasan->stage)->toBe('menunggu')
+        ->and((int) $penugasan->komunitas_relawan_id)->toBe((int) $komunitas->id)
+        ->and((int) $penugasan->laporan_banjir_id)->toBe((int) $laporan->id)
         ->and($penugasan->jumlah_personil_tugas)->toBe(2)
         ->and($penugasan->armada_perahu_tugas)->toBe(1)
+        ->and($penugasan->catatan)->toBe('Bawa perlengkapan keselamatan.')
+        ->and($penugasan->created_at)->not->toBeNull()
         ->and($laporan->fresh()->status)->toBe('ditugaskan')
         ->and(AuditLog::where('aksi', 'penugasan.buat')->where('subjek_id', $penugasan->id)->exists())->toBeTrue()
         ->and($komunitas->user->notifications()->where('type', PenugasanRelawanNotification::class)->exists())->toBeTrue();
@@ -140,8 +196,138 @@ test('admin can assign an eligible community and the in-app notification is pers
         ->get(route('komunitas.penugasan.index'))
         ->assertOk()
         ->assertSee('Jalan Siaga')
+        ->assertSee('<strong>2</strong> personel', false)
+        ->assertSee('1 perahu')
+        ->assertSee('Bawa perlengkapan keselamatan.')
+        ->assertSee(route('komunitas.penugasan.show', $penugasan), false)
+        ->assertDontSee('Terima tugas');
+
+    $komunitasLain = KomunitasRelawan::where('id', '!=', $komunitas->id)->firstOrFail();
+    $this->actingAs($komunitasLain->user)
+        ->get(route('komunitas.penugasan.index'))
+        ->assertOk()
+        ->assertDontSee('Jalan Siaga')
+        ->assertDontSee(route('komunitas.penugasan.show', $penugasan), false);
+    $this->get(route('komunitas.penugasan.show', $penugasan))
+        ->assertNotFound();
+
+    $this->actingAs($admin)
+        ->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
+        ->assertOk()
+        ->assertSee('Jalan Siaga')
+        ->assertSee($komunitas->nama)
+        ->assertSee('Menunggu');
+
+    $this->actingAs($komunitas->user)
+        ->get(route('komunitas.penugasan.show', $penugasan))
+        ->assertOk()
+        ->assertSee('Bawa perlengkapan keselamatan.')
         ->assertSee('Terima tugas')
-        ->assertSee('Tolak');
+        ->assertSee('Alasan penolakan');
+
+    $this->post(route('komunitas.penugasan.respon', $penugasan), [
+        'stage' => 'diterima',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    expect($penugasan->fresh()->stage)->toBe('diterima')
+        ->and($penugasan->fresh()->waktu_diterima)->not->toBeNull();
+
+    $this->actingAs($admin)
+        ->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
+        ->assertOk()
+        ->assertSee('Diterima');
+
+    foreach ([
+        ['stage' => 'menuju_lokasi', 'catatan' => 'Relawan menuju lokasi.'],
+        ['stage' => 'ditangani', 'catatan' => 'Penanganan sedang berlangsung.'],
+        ['stage' => 'selesai', 'catatan' => 'Penanganan selesai.'],
+    ] as $progress) {
+        $this->actingAs($komunitas->user)
+            ->patch(route('komunitas.penugasan.progres', $penugasan), $progress)
+            ->assertRedirect(route('komunitas.penugasan.show', $penugasan))
+            ->assertSessionHas('success');
+    }
+
+    $penugasan->refresh();
+    expect($penugasan->stage)->toBe('selesai')
+        ->and($penugasan->waktu_menuju_lokasi)->not->toBeNull()
+        ->and($penugasan->waktu_ditangani)->not->toBeNull()
+        ->and($penugasan->waktu_selesai)->not->toBeNull()
+        ->and($penugasan->catatanPerTahap())->toMatchArray([
+            'menuju_lokasi' => 'Relawan menuju lokasi.',
+            'ditangani' => 'Penanganan sedang berlangsung.',
+            'selesai' => 'Penanganan selesai.',
+        ]);
+});
+
+test('recommendations are limited to the three pilot villages and exclude out-of-scope communities', function () {
+    $outsideWilayah = Wilayah::create([
+        'kode_adm4' => '99.99.99.9999',
+        'nama_kelurahan' => 'Kelurahan Luar Cakupan',
+        'kecamatan' => 'Kecamatan Uji',
+        'latitude' => -6.8,
+        'longitude' => 109.8,
+        'radius_cakupan_m' => 1500,
+        'is_aktif' => true,
+    ]);
+    $komunitasLuar = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $komunitasLuar->update(['wilayah_id' => $outsideWilayah->id]);
+
+    $komunitasDenganPoskoLuar = KomunitasRelawan::where('nama', 'Komunitas Relawan Degayu')->firstOrFail();
+    $komunitasDenganPoskoLuar->posko()->firstOrFail()->update([
+        'latitude' => -6.0,
+        'longitude' => 108.0,
+    ]);
+
+    $hasil = app(RekomendasiPenugasanService::class)->untukLaporan(laporanUntukPenugasan());
+    $namaKelompok = collect($hasil['kelompok'])->pluck('nama')->all();
+    sort($namaKelompok);
+    $namaKandidat = collect($hasil['kelompok'])
+        ->flatMap(fn (array $group) => $group['kandidat'])
+        ->pluck('komunitas.nama')
+        ->all();
+
+    expect($namaKelompok)->toBe(['Degayu', 'Pasirkraton Kramat', 'Tirto'])
+        ->and($namaKandidat)->not->toContain($komunitasLuar->nama)
+        ->and($namaKandidat)->not->toContain($komunitasDenganPoskoLuar->nama)
+        ->and($namaKelompok)->not->toContain('Luar cakupan ALIR')
+        ->and($namaKelompok)->not->toContain('Kelurahan Luar Cakupan');
+});
+
+test('new assignments appear first when community assignment timestamps tie', function () {
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+
+    for ($i = 0; $i < 10; $i++) {
+        $laporanLama = laporanUntukPenugasan();
+        Penugasan::create([
+            'laporan_banjir_id' => $laporanLama->id,
+            'komunitas_relawan_id' => $komunitas->id,
+            'ditugaskan_oleh' => $admin->id,
+            'jumlah_personil_tugas' => 1,
+            'stage' => 'selesai',
+        ]);
+    }
+
+    $laporanBaru = laporanUntukPenugasan();
+    $kandidat = collect(app(RekomendasiPenugasanService::class)->untukLaporan($laporanBaru)['kelompok'])
+        ->flatMap(fn (array $group) => $group['kandidat'])
+        ->first(fn (array $item) => (int) $item['komunitas']->id === (int) $komunitas->id);
+    expect($kandidat['bisa_ditugaskan'])->toBeTrue();
+
+    $this->actingAs($admin)->post(route('admin.penugasan.store', $laporanBaru), [
+        'komunitas_relawan_id' => $komunitas->id,
+        'jumlah_personil_tugas' => 1,
+        'armada_perahu_tugas' => 0,
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $penugasanBaru = Penugasan::where('laporan_banjir_id', $laporanBaru->id)->firstOrFail();
+    $response = $this->actingAs($komunitas->user)
+        ->get(route('komunitas.penugasan.index'))
+        ->assertOk()
+        ->assertSee('dusk="penugasan-'.$penugasanBaru->id.'"', false);
+
+    expect((int) $response->viewData('penugasan')->first()->id)->toBe((int) $penugasanBaru->id);
 });
 
 test('admin can edit a pending assignment and the change is audited and notified', function () {
@@ -191,7 +377,7 @@ test('admin can cancel a pending assignment without deleting it', function () {
         ->and($komunitas->user->notifications()->where('type', PenugasanRelawanNotification::class)->exists())->toBeTrue();
 });
 
-test('admin cannot edit or cancel an assignment after it has left the waiting stage', function () {
+test('admin can edit notes after acceptance but cannot cancel after it has left the waiting stage', function () {
     $laporan = laporanUntukPenugasan();
     $admin = User::where('email', 'admin@alir.test')->firstOrFail();
     $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
@@ -207,14 +393,124 @@ test('admin cannot edit or cancel an assignment after it has left the waiting st
     $this->actingAs($admin)->patch(route('admin.penugasan.update', $penugasan), [
         'jumlah_personil_tugas' => 1,
         'armada_perahu_tugas' => 0,
-    ])->assertRedirect()->assertSessionHasErrors('penugasan');
+        'catatan' => 'Catatan koordinasi lapangan.',
+    ])->assertRedirect()->assertSessionHas('success');
 
     $this->post(route('admin.penugasan.batalkan', $penugasan), [
         'alasan' => 'Tidak boleh dibatalkan setelah diterima.',
     ])->assertRedirect()->assertSessionHasErrors('penugasan');
 
     expect($penugasan->fresh()->stage)->toBe('diterima')
-        ->and(AuditLog::whereIn('aksi', ['penugasan.perbarui', 'penugasan.batalkan'])->where('subjek_id', $penugasan->id)->exists())->toBeFalse();
+        ->and($penugasan->fresh()->catatan)->toBe('Catatan koordinasi lapangan.')
+        ->and(AuditLog::where('aksi', 'penugasan.perbarui')->where('subjek_id', $penugasan->id)->exists())->toBeTrue()
+        ->and(AuditLog::where('aksi', 'penugasan.batalkan')->where('subjek_id', $penugasan->id)->exists())->toBeFalse();
+});
+
+test('admin can safely edit notes for progressing completed and cancelled assignments', function () {
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+
+    foreach (['menuju_lokasi', 'ditangani', 'selesai', 'dibatalkan'] as $stage) {
+        $laporan = laporanUntukPenugasan();
+        $penugasan = Penugasan::create([
+            'laporan_banjir_id' => $laporan->id,
+            'komunitas_relawan_id' => $komunitas->id,
+            'ditugaskan_oleh' => $admin->id,
+            'jumlah_personil_tugas' => 2,
+            'stage' => $stage,
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.penugasan.update', $penugasan), [
+            'jumlah_personil_tugas' => 1,
+            'armada_perahu_tugas' => 0,
+            'catatan' => "Catatan admin untuk {$stage}.",
+        ])->assertRedirect()->assertSessionHas('success');
+
+        expect($penugasan->fresh()->stage)->toBe($stage)
+            ->and($penugasan->fresh()->jumlah_personil_tugas)->toBe(2)
+            ->and($penugasan->fresh()->catatan)->toBe("Catatan admin untuk {$stage}.")
+            ->and(AuditLog::where('aksi', 'penugasan.perbarui')->where('subjek_id', $penugasan->id)->exists())->toBeTrue();
+    }
+});
+
+test('admin can reassign a rejected assignment through edit', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitasAwal = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitasAwal->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'menunggu',
+    ]);
+    $penugasan->perbaruiStage('ditolak', 'Kendala personel.');
+
+    $kandidat = collect(app(RekomendasiPenugasanService::class)->untukLaporan($laporan->fresh())['kelompok'])
+        ->flatMap(fn (array $group) => $group['kandidat'])
+        ->first(fn (array $candidate) => $candidate['bisa_ditugaskan']
+            && (int) $candidate['komunitas']->id !== (int) $komunitasAwal->id);
+    expect($kandidat)->not->toBeNull();
+
+    $this->actingAs($admin)->patch(route('admin.penugasan.update', $penugasan), [
+        'komunitas_relawan_id' => $kandidat['komunitas']->id,
+        'jumlah_personil_tugas' => 2,
+        'armada_perahu_tugas' => 0,
+        'catatan' => 'Dialihkan setelah penolakan.',
+        'alasan_pengalihan' => 'Komunitas awal menolak tugas.',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    expect($penugasan->fresh()->stage)->toBe('dibatalkan')
+        ->and(Penugasan::where('laporan_banjir_id', $laporan->id)->where('id', '!=', $penugasan->id)->first()?->stage)->toBe('menunggu')
+        ->and(AuditLog::where('aksi', 'penugasan.alihkan_buat')->where('deskripsi', 'like', '%Komunitas awal menolak tugas.%')->exists())->toBeTrue();
+});
+
+test('admin deletion preserves rejected history and blocks active field assignments', function () {
+    $laporanDitolak = laporanUntukPenugasan();
+    $laporanAktif = laporanUntukPenugasan();
+    $laporanSelesai = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $ditolak = Penugasan::create([
+        'laporan_banjir_id' => $laporanDitolak->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'ditolak',
+        'alasan_tolak' => 'Tidak ada personel.',
+    ]);
+    $aktif = Penugasan::create([
+        'laporan_banjir_id' => $laporanAktif->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'diterima',
+    ]);
+    $selesai = Penugasan::create([
+        'laporan_banjir_id' => $laporanSelesai->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'selesai',
+    ]);
+
+    $this->actingAs($admin)->delete(route('admin.penugasan.destroy', $ditolak), [
+        'alasan' => 'Duplikasi data penugasan.',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->delete(route('admin.penugasan.destroy', $aktif), [
+        'alasan' => 'Tidak boleh menghapus tugas aktif.',
+    ])->assertRedirect()->assertSessionHasErrors('penugasan');
+
+    $this->delete(route('admin.penugasan.destroy', $selesai), [
+        'alasan' => 'Arsip duplikat.',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    expect(Penugasan::withTrashed()->whereKey($ditolak->id)->firstOrFail()->deleted_at)->not->toBeNull()
+        ->and(AuditLog::where('aksi', 'penugasan.hapus')->where('subjek_id', $ditolak->id)->exists())->toBeTrue()
+        ->and(Penugasan::withTrashed()->whereKey($selesai->id)->firstOrFail()->deleted_at)->not->toBeNull()
+        ->and(AuditLog::where('aksi', 'penugasan.hapus')->where('subjek_id', $selesai->id)->exists())->toBeTrue()
+        ->and($aktif->fresh()->stage)->toBe('diterima');
 });
 
 test('recommendation scoring uses configured fixed weights and limited readiness stays assignable', function () {
@@ -254,7 +550,8 @@ test('not-ready communities remain visible but disabled with the agreed readines
         ->get(route('admin.penugasan.index'))
         ->assertOk()
         ->assertSee('<div class="candidate disabled', false)
-        ->assertSee('<button type="button" class="btn btn-coral btn-sm candidate-assign" disabled>Tugaskan</button>', false);
+        ->assertSee('Komunitas belum siaga.')
+        ->assertDontSee('candidate-actions" disabled', false);
 
     $komunitas->jadwalKesiapsiagaan()->update(['status_ketersediaan' => 'tersedia']);
     Carbon::setTestNow('2026-11-16 21:00:00');
@@ -308,6 +605,111 @@ test('community rejection returns the report to the unassigned queue and leaves 
     expect($penugasan->fresh()->stage)->toBe('ditolak')
         ->and($laporan->fresh()->status)->toBe('terverifikasi')
         ->and(AuditLog::where('aksi', 'penugasan.ditolak')->where('subjek_id', $penugasan->id)->exists())->toBeTrue();
+});
+
+test('community assignment list opens a separate detail view without inline response or progress forms', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'menunggu',
+    ]);
+
+    $this->actingAs($komunitas->user)
+        ->get(route('komunitas.penugasan.index'))
+        ->assertOk()
+        ->assertSee(route('komunitas.penugasan.show', $penugasan), false)
+        ->assertSee('Lihat detail')
+        ->assertDontSee('name="stage" value="diterima"', false)
+        ->assertDontSee(route('komunitas.penugasan.progres', $penugasan), false);
+
+    $this->get(route('komunitas.penugasan.show', $penugasan))
+        ->assertOk()
+        ->assertSee('Respons penugasan')
+        ->assertSee('Terima tugas')
+        ->assertSee('Alasan penolakan');
+});
+
+test('community progresses sequentially and progress events are audited', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'diterima',
+    ]);
+
+    $this->actingAs($komunitas->user)
+        ->from(route('komunitas.penugasan.show', $penugasan))
+        ->patch(route('komunitas.penugasan.progres', $penugasan), [
+            'stage' => 'ditangani',
+        ])->assertRedirect(route('komunitas.penugasan.show', $penugasan))
+        ->assertSessionHasErrors('stage');
+
+    foreach ([
+        ['menuju_lokasi', 'Berangkat menuju lokasi.'],
+        ['ditangani', 'Penanganan dimulai.'],
+        ['selesai', 'Penanganan selesai.'],
+    ] as [$stage, $catatan]) {
+        $this->patch(route('komunitas.penugasan.progres', $penugasan), [
+            'stage' => $stage,
+            'catatan' => $catatan,
+        ])->assertRedirect(route('komunitas.penugasan.show', $penugasan))
+            ->assertSessionHas('success');
+    }
+
+    expect($penugasan->fresh()->stage)->toBe('selesai')
+        ->and($penugasan->fresh()->waktu_menuju_lokasi)->not->toBeNull()
+        ->and($penugasan->fresh()->waktu_ditangani)->not->toBeNull()
+        ->and($penugasan->fresh()->waktu_selesai)->not->toBeNull()
+        ->and($penugasan->fresh()->catatan_tahap)->toMatchArray([
+            'menuju_lokasi' => 'Berangkat menuju lokasi.',
+            'ditangani' => 'Penanganan dimulai.',
+            'selesai' => 'Penanganan selesai.',
+        ])
+        ->and(AuditLog::whereIn('aksi', [
+            'penugasan.menuju_lokasi',
+            'penugasan.ditangani',
+            'penugasan.selesai',
+        ])->where('subjek_id', $penugasan->id)->count())->toBe(3)
+        ->and($laporan->fresh()->status)->toBe('selesai');
+
+    $this->get(route('komunitas.penugasan.show', $penugasan))
+        ->assertOk()
+        ->assertSee('Riwayat progres')
+        ->assertSee('Penanganan selesai.')
+        ->assertSee('Penugasan selesai');
+});
+
+test('rejected community assignment shows reason and never offers field progress', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'stage' => 'menunggu',
+    ]);
+    $this->actingAs($komunitas->user)->post(route('komunitas.penugasan.respon', $penugasan), [
+        'stage' => 'ditolak',
+        'alasan_tolak' => 'Tidak ada relawan pada shift tersebut.',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    $this->get(route('komunitas.penugasan.show', $penugasan))
+        ->assertOk()
+        ->assertSee('Alasan penolakan')
+        ->assertSee('Tidak ada relawan pada shift tersebut.')
+        ->assertDontSee('Pembaruan progres')
+        ->assertDontSee(route('komunitas.penugasan.progres', $penugasan), false);
 });
 
 test('admin can reassign a pending task atomically and record the reason', function () {

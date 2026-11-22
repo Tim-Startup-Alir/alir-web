@@ -82,10 +82,12 @@ test('akun nonaktif ditolak saat login dan bila dinonaktifkan saat sesi berjalan
 test('role yang salah mendapat respon 403 dari middleware role', function () {
     $admin = User::where('email', 'admin@alir.test')->firstOrFail();
     $this->actingAs($admin)->get('/komunitas')->assertForbidden();
+    $this->get('/admin')->assertOk();
 
     $komunitas = User::where('email', 'komunitas.tirto@alir.test')->firstOrFail();
     $komunitas->update(['wajib_ganti_sandi' => false]);
     $this->actingAs($komunitas)->get('/admin')->assertForbidden();
+    $this->get('/komunitas')->assertOk();
 });
 
 test('komunitas yang belum verifikasi email diarahkan ke halaman verifikasi email', function () {

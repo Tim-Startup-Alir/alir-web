@@ -73,7 +73,9 @@ Route::prefix('admin')
         // F-05 Rekomendasi dan penugasan relawan
         Route::get('penugasan-relawan', [AdminPenugasanRelawanController::class, 'index'])->name('penugasan.index');
         Route::post('laporan/{laporan}/penugasan', [AdminPenugasanRelawanController::class, 'store'])->name('penugasan.store');
+        Route::get('penugasan/{penugasan}', [AdminPenugasanRelawanController::class, 'show'])->name('penugasan.show');
         Route::patch('penugasan/{penugasan}', [AdminPenugasanRelawanController::class, 'update'])->name('penugasan.update');
+        Route::delete('penugasan/{penugasan}', [AdminPenugasanRelawanController::class, 'destroy'])->name('penugasan.destroy');
         Route::post('penugasan/{penugasan}/batalkan', [AdminPenugasanRelawanController::class, 'batalkan'])->name('penugasan.batalkan');
         Route::post('penugasan/{penugasan}/alihkan', [AdminPenugasanRelawanController::class, 'alihkan'])->name('penugasan.alihkan');
 
@@ -121,8 +123,11 @@ Route::prefix('komunitas')
 
         // F-05 Penugasan yang diterima komunitas
         Route::get('penugasan', [KomunitasPenugasanRelawanController::class, 'index'])->name('penugasan.index');
+        Route::get('penugasan/{penugasan}', [KomunitasPenugasanRelawanController::class, 'show'])->name('penugasan.show');
         Route::post('penugasan/{penugasan}/respon', [KomunitasPenugasanRelawanController::class, 'respon'])
             ->name('penugasan.respon');
+        Route::patch('penugasan/{penugasan}/progres', [KomunitasPenugasanRelawanController::class, 'progres'])
+            ->name('penugasan.progres');
 
         Route::get('profil/{komunitas?}', [ProfilKomunitasController::class, 'editKomunitas'])->name('profil.edit');
         Route::put('profil/{komunitas?}', [ProfilKomunitasController::class, 'updateKomunitas'])->name('profil.update');

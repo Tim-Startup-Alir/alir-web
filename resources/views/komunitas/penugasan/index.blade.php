@@ -1,79 +1,97 @@
 @extends('layouts.komunitas')
 
 @section('title', 'Penugasan')
+
+@push('styles')
+<style>
+.community-assignments{display:grid;gap:14px}
+.community-assignment-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:18px}
+.community-assignment-heading h2{margin:5px 0;font-size:28px}
+.community-assignment-heading p{margin:0;color:#6b7b8d}
+.community-assignment-count{flex:0 0 auto;color:#687b8f;font-size:13px;font-weight:700}
+.community-assignment-list{display:grid;gap:8px}
+.community-assignment-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;padding:14px 16px;border:1px solid #e1e8ed;border-left:3px solid #d5e2e8;border-radius:10px;background:#fff}
+.community-assignment-item.is-active{border-left-color:#238b78}
+.community-assignment-item.is-rejected{border-left-color:#be5552}
+.community-assignment-main{min-width:0}
+.community-assignment-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.community-assignment-title h3{margin:0;font-size:15px;color:#213a50}
+.community-assignment-location{margin-top:4px;color:#4f6579;font-size:13px}
+.community-assignment-meta{display:flex;gap:8px 16px;flex-wrap:wrap;margin-top:8px;color:#718195;font-size:12px}
+.community-assignment-meta strong{color:#324a5f}
+.community-assignment-note{margin-top:8px;color:#6b7b8d;font-size:12px}
+.community-assignment-action{display:flex;align-items:center}
+.community-assignment-empty{padding:28px;border:1px dashed #d8e2e8;border-radius:10px;background:#fff;text-align:center;color:#718195}
+.community-pagination{margin-top:2px}
+@media(max-width:680px){
+ .community-assignment-heading{align-items:flex-start;flex-direction:column}
+ .community-assignment-heading h2{font-size:24px}
+ .community-assignment-item{grid-template-columns:1fr}
+ .community-assignment-action{justify-content:flex-start}
+}
+</style>
+@endpush
+
 @section('content')
-    <div class="pg-h">
+<div class="community-assignments">
+    <header class="community-assignment-heading">
         <div>
             <span class="kicker">OPERASI LAPANGAN</span>
             <h2>Penugasan</h2>
-            <p class="muted">Tinjau tugas baru dan pantau perkembangan penugasan komunitas.</p>
+            <p>Tinjau permintaan, lokasi, kebutuhan personel, dan perkembangan tugas komunitas.</p>
         </div>
-    </div>
+        <span class="community-assignment-count">{{ $penugasan->total() }} penugasan</span>
+    </header>
 
     @if ($penugasan->isEmpty())
-        <div class="empty">Belum ada penugasan untuk komunitas Anda.</div>
+        <div class="community-assignment-empty">Belum ada penugasan untuk komunitas Anda.</div>
     @else
-        <div class="grid-alir g2">
+        <div class="community-assignment-list">
             @foreach ($penugasan as $tugas)
-                <article class="card" dusk="penugasan-{{ $tugas->id }}">
-                    <div class="row between items-start gap-3">
-                        <div>
-                            <span class="kicker">P-{{ str_pad((string) $tugas->laporan_banjir_id, 5, '0', STR_PAD_LEFT) }}</span>
-                            <h3 class="mt-1">{{ $tugas->laporanBanjir?->alamat_singkat ?? 'Lokasi laporan' }}</h3>
-                            <p class="xs muted">
-                                {{ $tugas->laporanBanjir?->wilayah?->nama_kelurahan ?? 'Wilayah tidak diketahui' }}
-                                &middot; {{ $tugas->created_at?->translatedFormat('d M Y, H:i') }}
-                            </p>
+                @php
+                    $kodeLaporan = $tugas->laporanBanjir?->kode_pelacakan ?? str_pad((string)$tugas->laporan_banjir_id, 5, '0', STR_PAD_LEFT);
+                    $stageClass = match ($tugas->stage) {
+                        'menunggu' => 'amber',
+                        'diterima', 'menuju_lokasi', 'ditangani' => 'teal',
+                        'ditolak' => 'red',
+                        default => 'navy',
+                    };
+                @endphp
+                <article class="community-assignment-item {{ in_array($tugas->stage,['diterima','menuju_lokasi','ditangani'],true) ? 'is-active' : '' }} {{ $tugas->stage === 'ditolak' ? 'is-rejected' : '' }}" dusk="penugasan-{{ $tugas->id }}">
+                    <div class="community-assignment-main">
+                        <div class="community-assignment-title">
+                            <h3>Penugasan #{{ $tugas->id }} · P-{{ $kodeLaporan }}</h3>
+                            <span class="tag {{ $stageClass }}">{{ ucfirst(str_replace('_',' ', $tugas->stage)) }}</span>
                         </div>
-                        <span class="tag {{ $tugas->stage === 'menunggu' ? 'amber' : (in_array($tugas->stage, ['diterima', 'menuju_lokasi', 'ditangani'], true) ? 'teal' : 'navy') }}">
-                            {{ ucfirst(str_replace('_', ' ', $tugas->stage)) }}
-                        </span>
-                    </div>
-                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm">
-                        <span>{{ $tugas->jumlah_personil_tugas }} personel</span>
-                        <span>{{ $tugas->armada_perahu_tugas }} perahu</span>
-                        @if ($tugas->jarak_km !== null)<span>{{ number_format($tugas->jarak_km, 2) }} km dari posko</span>@endif
-                    </div>
-                    @if ($tugas->catatan)
-                        <div class="mt-3 p-3 rounded-xl bg-slate-50 text-sm">{{ $tugas->catatan }}</div>
-                    @endif
-                    @if ($tugas->stage === 'menunggu')
-                        <div class="flex flex-wrap gap-2 mt-4">
-                            <form method="POST" action="{{ route('komunitas.penugasan.respon', $tugas) }}" data-submit-state>
-                                @csrf
-                                <input type="hidden" name="stage" value="diterima">
-                                <button class="btn btn-teal btn-sm" type="submit">Terima tugas</button>
-                            </form>
-                            <details>
-                                <summary class="btn btn-ghost btn-sm cursor-pointer">Tolak</summary>
-                                <form method="POST" action="{{ route('komunitas.penugasan.respon', $tugas) }}" class="mt-3 flex flex-wrap gap-2" data-submit-state>
-                                    @csrf
-                                    <input type="hidden" name="stage" value="ditolak">
-                                    <input class="input min-w-[220px]" name="alasan_tolak" required maxlength="1000" placeholder="Alasan penolakan">
-                                    <button class="btn btn-red btn-sm" type="submit">Kirim penolakan</button>
-                                </form>
-                            </details>
+                        <div class="community-assignment-location">
+                            {{ $tugas->laporanBanjir?->alamat_singkat ?: 'Lokasi laporan' }}
+                            · {{ $tugas->laporanBanjir?->wilayah?->nama_kelurahan ?? 'Wilayah tidak diketahui' }}
                         </div>
-                    @elseif ($tugas->stage === 'ditolak' && $tugas->alasan_tolak)
-                        <p class="xs muted mt-3">Alasan penolakan: {{ $tugas->alasan_tolak }}</p>
-                    @endif
+                        <div class="community-assignment-meta">
+                            <span>Laporan {{ $tugas->laporanBanjir?->created_at?->translatedFormat('d M Y, H:i') ?? '-' }}</span>
+                            <span><strong>{{ $tugas->laporanBanjir?->jumlah_warga ?? '-' }}</strong> warga terdampak</span>
+                            <span><strong>{{ $tugas->jumlah_personil_tugas }}</strong> personel · {{ $tugas->armada_perahu_tugas }} perahu</span>
+                            @if ($tugas->jarak_km !== null)<span>{{ number_format((float)$tugas->jarak_km,2) }} km dari posko</span>@endif
+                        </div>
+                        @if ($tugas->catatan)
+                            <div class="community-assignment-note">Catatan: {{ \Illuminate\Support\Str::limit($tugas->catatan, 150) }}</div>
+                        @endif
+                    </div>
+                    <div class="community-assignment-action">
+                        <a class="btn btn-navy btn-sm" href="{{ route('komunitas.penugasan.show',$tugas) }}" aria-label="Lihat detail penugasan #{{ $tugas->id }}">
+                            <i data-lucide="arrow-up-right"></i> Lihat detail
+                        </a>
+                    </div>
                 </article>
             @endforeach
         </div>
-        <div class="mt-5">{{ $penugasan->links() }}</div>
+        <div class="community-pagination">{{ $penugasan->links() }}</div>
     @endif
+</div>
 @endsection
 
 @push('scripts')
-    <script>
-        document.querySelectorAll('[data-submit-state]').forEach((form) => {
-            form.addEventListener('submit', () => {
-                const button = form.querySelector('button[type="submit"]');
-                if (!button || !form.reportValidity()) return;
-                button.disabled = true;
-                button.textContent = 'Mengirim...';
-            });
-        });
-        if (window.lucide) window.lucide.createIcons();
-    </script>
+<script>
+if(window.lucide)window.lucide.createIcons();
+</script>
 @endpush

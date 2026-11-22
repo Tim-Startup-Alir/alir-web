@@ -16,10 +16,16 @@
     $jarak = $candidate['jarak_km'];
 @endphp
 <div class="candidate {{ $canAssign ? '' : 'disabled' }} {{ $best ? 'best' : '' }}">
-    <div class="candidate-head">
+    <div class="candidate-details">
         <div class="candidate-main">
             <div class="candidate-name">{{ $community->nama }}</div>
-            <div class="candidate-stats">
+            <div class="candidate-meta">
+                @if ($candidate['posko'])
+                    <span>{{ $candidate['posko']->nama ?? 'Posko komunitas' }}</span>
+                @endif
+                @if ($candidate['wilayah_posko'])
+                    <span>{{ str_replace('Pasirkratonkramat','Pasirkraton Kramat',$candidate['wilayah_posko']->nama_kelurahan) }}</span>
+                @endif
                 <span>
                     {{ $jarak === null
                         ? 'Jarak tidak tersedia'
@@ -31,26 +37,35 @@
                 @if ($candidate['jumlah_penugasan_aktif'] > 0)
                     <span>{{ $candidate['jumlah_penugasan_aktif'] }} tugas aktif</span>
                 @endif
+                <span>{{ $candidate['label_jadwal'] }}</span>
             </div>
         </div>
-        <div class="candidate-controls">
-            <span class="score-pill">Skor {{ number_format(round($candidate['skor_rekomendasi']), 0) }}/100</span>
-            @if ($canAssign)
-                <button type="button" class="btn btn-coral btn-sm candidate-assign" data-dialog-id="{{ $dialogId }}">Tugaskan</button>
-            @else
-                <button type="button" class="btn btn-coral btn-sm candidate-assign" disabled>Tugaskan</button>
-            @endif
+        <div class="candidate-status">
+            <span class="tag teal">Aktif &amp; terverifikasi</span>
+            <span class="tag {{ $availabilityClass }}">{{ $availabilityLabel }}</span>
+            @if ($candidate['wilayah_sesuai'])<span class="tag navy">Sesuai wilayah layanan</span>@endif
+            @if ($candidate['sudah_ditugaskan'])<span class="tag navy">Sudah ditugaskan</span>@endif
+            @if ($best)<span class="tag teal">Rekomendasi terbaik</span>@endif
         </div>
+        @if (! $canAssign)
+            <div class="candidate-reason">{{ $candidate['alasan_tidak_bisa'] }}</div>
+        @endif
     </div>
-    <div class="candidate-status">
-        <span class="tag {{ $availabilityClass }}">{{ $availabilityLabel }}</span>
-        @if ($candidate['wilayah_sesuai'])<span class="tag navy">Sesuai wilayah layanan</span>@endif
-        @if ($candidate['sudah_ditugaskan'])<span class="tag navy">Sudah ditugaskan</span>@endif
-        @if ($best)<span class="tag teal">Rekomendasi terbaik</span>@endif
+    <div class="candidate-side">
+        <span class="candidate-score">Skor {{ number_format(round($candidate['skor_rekomendasi']), 0) }}/100</span>
+        @if ($candidate['skor_komponen'])
+            <div class="candidate-meta">
+                Jarak {{ number_format($candidate['skor_komponen']['jarak'],1) }} ·
+                Kapasitas {{ number_format($candidate['skor_komponen']['kapasitas'],1) }} ·
+                Wilayah {{ number_format($candidate['skor_komponen']['wilayah'],1) }} ·
+                Siaga {{ number_format($candidate['skor_komponen']['jadwal'],1) }}
+            </div>
+        @endif
+        @if ($canAssign)
+            <button type="button" class="btn btn-coral btn-sm candidate-actions" data-select-candidate data-dialog-id="{{ $dialogId }}">Tugaskan</button>
+        @endif
     </div>
-    @if (! $canAssign)
-        <div class="candidate-reason mt-1">{{ $candidate['alasan_tidak_bisa'] }}</div>
-    @else
+    @if ($canAssign)
         <dialog class="assign-dialog" id="{{ $dialogId }}" aria-labelledby="{{ $dialogId }}-title">
             <div class="assign-dialog-content">
                 <div class="assign-dialog-head">

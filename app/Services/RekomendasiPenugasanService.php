@@ -19,26 +19,30 @@ class RekomendasiPenugasanService
      * @return array{
      *     wilayah_laporan: ?Wilayah,
      *     di_luar_cakupan: bool,
-     *     kelompok: array<int, array{key: string, nama: string, prioritas: bool, luar_cakupan: bool, kandidat: Collection}>
+     *     kelompok: array<int, array{key: string, nama: string, prioritas: bool, kandidat: Collection}>
      * }
      */
     public function untukLaporan(LaporanBanjir $laporan): array
     {
         $laporan->loadMissing('wilayah', 'penugasan');
         $waktu = now();
-        $wilayahAktif = Wilayah::aktif()->orderBy('nama_kelurahan')->get();
+        $wilayahAktif = Wilayah::aktif()
+            ->whereIn('nama_kelurahan', ['Tirto', 'Pasirkratonkramat', 'Pasirkraton Kramat', 'Degayu'])
+            ->orderBy('nama_kelurahan')
+            ->get();
         $wilayahLaporan = $laporan->wilayah;
         $kelompok = $wilayahAktif->mapWithKeys(fn (Wilayah $wilayah) => [
             'wilayah:'.$wilayah->id => [
                 'key' => 'wilayah:'.$wilayah->id,
                 'nama' => $this->namaWilayah($wilayah->nama_kelurahan),
                 'prioritas' => $wilayahLaporan?->is($wilayah) ?? false,
-                'luar_cakupan' => false,
                 'kandidat' => collect(),
             ],
         ])->all();
 
-        $diLuarCakupan = $wilayahLaporan === null || ! $wilayahLaporan->is_aktif;
+        $diLuarCakupan = $wilayahLaporan === null
+            || ! $wilayahLaporan->is_aktif
+            || ! $wilayahAktif->contains(fn (Wilayah $wilayah) => $wilayah->is($wilayahLaporan));
         $ditugaskanAktif = $laporan->penugasan
             ->whereIn('stage', Penugasan::STAGE_AKTIF)
             ->pluck('komunitas_relawan_id')
@@ -46,6 +50,7 @@ class RekomendasiPenugasanService
             ->all();
 
         $komunitasList = KomunitasRelawan::aktif()
+            ->whereIn('wilayah_id', $wilayahAktif->modelKeys())
             ->with([
                 'wilayah',
                 'posko' => fn ($query) => $query->orderBy('id'),
@@ -65,22 +70,16 @@ class RekomendasiPenugasanService
                 in_array((int) $komunitas->id, $ditugaskanAktif, true)
             );
 
+            if ($kandidat['posko_valid'] && $kandidat['wilayah_posko'] === null) {
+                continue;
+            }
+
             $key = $kandidat['wilayah_posko']
                 ? 'wilayah:'.$kandidat['wilayah_posko']->id
-                : ($kandidat['posko_valid'] ? 'luar' : 'wilayah:'.$komunitas->wilayah_id);
+                : 'wilayah:'.$komunitas->wilayah_id;
 
             if (! isset($kelompok[$key])) {
-                if ($key === 'luar') {
-                    $kelompok[$key] = [
-                        'key' => $key,
-                        'nama' => 'Luar cakupan ALIR',
-                        'prioritas' => false,
-                        'luar_cakupan' => true,
-                        'kandidat' => collect(),
-                    ];
-                } else {
-                    continue;
-                }
+                continue;
             }
 
             $kelompok[$key]['kandidat']->push($kandidat);
@@ -107,10 +106,7 @@ class RekomendasiPenugasanService
         return [
             'wilayah_laporan' => $wilayahLaporan,
             'di_luar_cakupan' => $diLuarCakupan,
-            'kelompok' => array_values(array_filter(
-                $kelompok,
-                fn (array $group) => ! $group['luar_cakupan'] || $group['kandidat']->isNotEmpty()
-            )),
+            'kelompok' => array_values($kelompok),
         ];
     }
 

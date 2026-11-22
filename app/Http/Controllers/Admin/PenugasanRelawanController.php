@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\LaporanBanjir;
 use App\Models\Penugasan;
 use App\Models\User;
@@ -24,8 +25,16 @@ class PenugasanRelawanController extends Controller
     ): View {
         $validated = $request->validate([
             'status' => ['sometimes', 'in:semua,belum_ditugaskan,sudah_ditugaskan'],
+            'severitas' => ['sometimes', 'in:semua,ringan,sedang,berat'],
+            'kepercayaan' => ['sometimes', 'in:semua,rendah,sedang,tinggi'],
+            'kelurahan' => ['sometimes', 'nullable', 'integer', 'exists:wilayah,id'],
+            'q' => ['sometimes', 'nullable', 'string', 'max:100'],
         ]);
         $statusFilter = $validated['status'] ?? 'semua';
+        $severityFilter = $validated['severitas'] ?? 'semua';
+        $confidenceFilter = $validated['kepercayaan'] ?? 'semua';
+        $villageFilter = $validated['kelurahan'] ?? null;
+        $search = trim((string) ($validated['q'] ?? ''));
 
         $laporanDasar = LaporanBanjir::query()
             ->whereIn('status', ['terverifikasi', 'ditugaskan']);
@@ -41,6 +50,7 @@ class PenugasanRelawanController extends Controller
             'belum_ditugaskan' => (clone $belumDitugaskan)->count(),
             'sudah_ditugaskan' => (clone $sudahDitugaskan)->count(),
         ];
+        $jumlahPrioritasTinggi = (clone $laporanDasar)->where('severity', 'berat')->count();
         $query = match ($statusFilter) {
             'belum_ditugaskan' => $belumDitugaskan,
             'sudah_ditugaskan' => $sudahDitugaskan,
@@ -48,6 +58,15 @@ class PenugasanRelawanController extends Controller
         };
 
         $laporan = $query
+            ->when($severityFilter !== 'semua', fn ($query) => $query->where('severity', $severityFilter))
+            ->when($confidenceFilter !== 'semua', fn ($query) => $query->where('tingkat_kepercayaan', $confidenceFilter))
+            ->when($villageFilter, fn ($query) => $query->where('wilayah_id', $villageFilter))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('kode_pelacakan', 'like', "%{$search}%")
+                        ->orWhere('alamat_singkat', 'like', "%{$search}%");
+                });
+            })
             ->with([
                 'wilayah',
                 'penugasan' => $penugasanAktif,
@@ -71,7 +90,6 @@ class PenugasanRelawanController extends Controller
         $opsiEditPenugasan = collect();
         if ($statusFilter === 'sudah_ditugaskan') {
             $opsiEditPenugasan = $daftarTugas->getCollection()
-                ->filter(fn (Penugasan $tugas) => $tugas->stage === 'menunggu')
                 ->mapWithKeys(function (Penugasan $tugas) use ($rekomendasi): array {
                     $komunitas = $tugas->komunitasRelawan;
                     $tugasAktifLain = $komunitas->penugasan()
@@ -98,12 +116,23 @@ class PenugasanRelawanController extends Controller
                     ]];
                 });
         }
+        $opsiKelurahan = \App\Models\Wilayah::query()
+            ->whereIn('nama_kelurahan', ['Tirto', 'Pasirkraton Kramat', 'Pasirkratonkramat', 'Degayu'])
+            ->aktif()
+            ->orderBy('nama_kelurahan')
+            ->get();
 
         return view('admin.penugasan.index', compact(
             'daftarTugas',
             'jumlahLaporan',
+            'jumlahPrioritasTinggi',
             'jumlahPelapor',
             'laporan',
+            'severityFilter',
+            'confidenceFilter',
+            'villageFilter',
+            'search',
+            'opsiKelurahan',
             'opsiEditPenugasan',
             'rekomendasiLaporan',
             'statusFilter'
@@ -208,13 +237,77 @@ class PenugasanRelawanController extends Controller
         return back()->with('success', 'Penugasan berhasil dialihkan.');
     }
 
+    public function show(Penugasan $penugasan): View
+    {
+        $penugasan->load([
+            'laporanBanjir.wilayah',
+            'komunitasRelawan.wilayah',
+            'komunitasRelawan.posko',
+            'penugas',
+        ]);
+        $riwayatAudit = AuditLog::query()
+            ->with('user')
+            ->where('subjek_type', $penugasan->getMorphClass())
+            ->where('subjek_id', $penugasan->id)
+            ->orderBy('waktu')
+            ->get();
+
+        return view('admin.penugasan.show', compact('penugasan', 'riwayatAudit'));
+    }
+
+    public function destroy(
+        Request $request,
+        Penugasan $penugasan,
+        PenugasanRelawanService $service
+    ): JsonResponse|RedirectResponse {
+        $data = $request->validate([
+            'alasan' => ['required', 'string', 'max:1000'],
+        ]);
+        $admin = $request->user();
+        abort_unless($admin instanceof User, 403);
+
+        if ($penugasan->stage === 'menunggu') {
+            $hasil = $service->batalkan($penugasan, $data['alasan'], $admin);
+            $this->kirimNotifikasi(
+                $hasil,
+                "Penugasan untuk laporan {$hasil->laporanBanjir?->kode_pelacakan} dibatalkan."
+            );
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => 'Penugasan berhasil dibatalkan.']);
+            }
+
+            return back()->with('success', 'Penugasan berhasil dibatalkan.');
+        }
+
+        if (in_array($penugasan->stage, ['diterima', 'menuju_lokasi', 'ditangani'], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'penugasan' => 'Penugasan aktif tidak dapat dihapus. Gunakan pembatalan hanya pada status menunggu atau tunggu penyelesaian lapangan.',
+            ]);
+        }
+
+        $penugasan->delete();
+        \App\Models\AuditLog::catat(
+            'penugasan.hapus',
+            $penugasan,
+            "Menghapus penugasan {$penugasan->id} secara aman melalui soft delete: {$data['alasan']}",
+            $admin
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Penugasan berhasil dihapus aman.']);
+        }
+
+        return back()->with('success', 'Penugasan berhasil dihapus aman.');
+    }
+
     public function update(
         Request $request,
         Penugasan $penugasan,
         PenugasanRelawanService $service
     ): JsonResponse|RedirectResponse {
         $data = $request->validate([
-            'jumlah_personil_tugas' => ['required', 'integer', 'min:1'],
+            'jumlah_personil_tugas' => ['nullable', 'integer', 'min:1'],
             'armada_perahu_tugas' => ['nullable', 'integer', 'min:0'],
             'catatan' => ['nullable', 'string', 'max:1000'],
             'komunitas_relawan_id' => [

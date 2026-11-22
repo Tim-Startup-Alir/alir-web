@@ -96,10 +96,22 @@ class PenugasanRelawanService
                 ->lockForUpdate()
                 ->findOrFail($penugasan->id);
 
-            if ($terkunci->stage !== 'menunggu') {
+            if (! in_array($terkunci->stage, ['menunggu', 'ditolak', 'diterima', 'menuju_lokasi', 'ditangani', 'selesai', 'dibatalkan'], true)) {
                 throw ValidationException::withMessages([
-                    'penugasan' => 'Hanya penugasan yang belum diterima yang dapat diedit.',
+                    'penugasan' => 'Penugasan pada status ini tidak dapat diedit.',
                 ]);
+            }
+
+            if ($terkunci->stage !== 'menunggu') {
+                $terkunci->update(['catatan' => $catatan]);
+                AuditLog::catat(
+                    'penugasan.perbarui',
+                    $terkunci,
+                    "Memperbarui catatan penugasan {$terkunci->id} untuk laporan {$laporan->kode_pelacakan}",
+                    $admin
+                );
+
+                return $terkunci->fresh(['laporanBanjir', 'komunitasRelawan']);
             }
 
             $komunitas = KomunitasRelawan::query()
@@ -169,9 +181,9 @@ class PenugasanRelawanService
                 ->lockForUpdate()
                 ->findOrFail($penugasan->id);
 
-            if ($lama->stage !== 'menunggu') {
+            if (! in_array($lama->stage, ['menunggu', 'ditolak'], true)) {
                 throw ValidationException::withMessages([
-                    'penugasan' => 'Hanya penugasan yang belum diterima yang dapat dialihkan.',
+                    'penugasan' => 'Penugasan aktif atau sudah selesai tidak dapat dialihkan.',
                 ]);
             }
 
@@ -181,7 +193,13 @@ class PenugasanRelawanService
                 ]);
             }
 
-            $lama->perbaruiStage('dibatalkan', $alasan);
+            if ($lama->stage === 'menunggu') {
+                $lama->perbaruiStage('dibatalkan', $alasan);
+            } else {
+                $lama->stage = 'dibatalkan';
+                $lama->alasan_tolak = $lama->alasan_tolak;
+                $lama->save();
+            }
             AuditLog::catat(
                 'penugasan.alihkan_batalkan',
                 $lama,
@@ -242,6 +260,45 @@ class PenugasanRelawanService
                 $stage === 'ditolak'
                     ? "Komunitas {$komunitas->nama} menolak tugas laporan {$laporan->kode_pelacakan}: {$alasan}"
                     : "Komunitas {$komunitas->nama} menerima tugas laporan {$laporan->kode_pelacakan}",
+                $komunitas->user
+            );
+
+            return $terkunci->fresh(['laporanBanjir', 'komunitasRelawan']);
+        });
+    }
+
+    public function perbaruiProgresKomunitas(
+        Penugasan $penugasan,
+        KomunitasRelawan $komunitas,
+        string $stage,
+        ?string $catatan
+    ): Penugasan {
+        return DB::transaction(function () use ($penugasan, $komunitas, $stage, $catatan): Penugasan {
+            $laporan = LaporanBanjir::query()
+                ->lockForUpdate()
+                ->findOrFail($penugasan->laporan_banjir_id);
+            $terkunci = Penugasan::query()
+                ->where('laporan_banjir_id', $laporan->id)
+                ->lockForUpdate()
+                ->findOrFail($penugasan->id);
+
+            if ((int) $terkunci->komunitas_relawan_id !== (int) $komunitas->id) {
+                abort(404);
+            }
+
+            if (! in_array($stage, ['menuju_lokasi', 'ditangani', 'selesai'], true)
+                || ! $terkunci->bisaPindahKe($stage)) {
+                throw ValidationException::withMessages([
+                    'stage' => 'Tahap progres tidak sesuai dengan status penugasan saat ini.',
+                ]);
+            }
+
+            $terkunci->perbaruiStage($stage, $catatan);
+            AuditLog::catat(
+                'penugasan.'.$stage,
+                $terkunci,
+                "Komunitas {$komunitas->nama} memperbarui progres laporan {$laporan->kode_pelacakan} ke {$stage}"
+                    .(filled($catatan) ? ": {$catatan}" : '.'),
                 $komunitas->user
             );
 
