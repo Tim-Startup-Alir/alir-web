@@ -24,6 +24,8 @@ class PenugasanRelawanController extends Controller
 
         $penugasan = $komunitas->penugasan()
             ->with(['laporanBanjir.wilayah'])
+            ->where('stage', '!=', 'dibatalkan')
+            ->whereHas('laporanBanjir', fn ($q) => $q->where('wilayah_id', $komunitas->wilayah_id))
             ->latest()
             ->orderByDesc('id')
             ->paginate(10)
@@ -39,6 +41,8 @@ class PenugasanRelawanController extends Controller
         $komunitas = $user->komunitasRelawan;
         abort_unless($komunitas instanceof KomunitasRelawan, 403);
         abort_unless((int) $penugasan->komunitas_relawan_id === (int) $komunitas->id, 404);
+        abort_if($penugasan->stage === 'dibatalkan', 404);
+        abort_unless((int) $penugasan->laporanBanjir?->wilayah_id === (int) $komunitas->wilayah_id, 404);
 
         $penugasan->load([
             'laporanBanjir.wilayah',

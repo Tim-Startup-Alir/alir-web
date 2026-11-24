@@ -11,13 +11,14 @@
 .assignment-header h2{margin:5px 0 6px;font-size:30px;letter-spacing:-.035em}
 .assignment-header p{margin:0;color:#6b7b8d;max-width:680px}
 .assignment-stats{display:grid;grid-template-columns:repeat(3,minmax(132px,1fr));gap:10px}
-.assignment-stat{display:flex;min-width:0;align-items:center;gap:11px;padding:13px;border:1px solid #e2e8ee;border-radius:12px;background:#fff}
-.assignment-stat-icon{display:grid;flex:0 0 40px;width:40px;height:40px;place-items:center;border-radius:11px;background:#fff4df;color:#a86a11}
+.assignment-stat{display:flex;min-width:0;min-height:74px;align-items:center;gap:12px;padding:14px;border:1px solid #e2e8ee;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(28,52,73,.035)}
+.assignment-stat-icon{display:flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;min-width:42px;min-height:42px;border-radius:11px;background:#fff4df;color:#a86a11;padding:0;margin:0;line-height:0;box-sizing:border-box}
+.assignment-stat-icon svg,.assignment-stat-icon i,.assignment-stat-icon [data-lucide]{display:block;width:20px;height:20px;min-width:20px;min-height:20px;max-width:20px;max-height:20px;stroke-width:2;margin:0;padding:0;flex-shrink:0}
 .assignment-stat.is-assigned .assignment-stat-icon{background:#e8f4f3;color:#187b89}
 .assignment-stat.is-priority .assignment-stat-icon{background:#fff0ee;color:#bc5b4f}
 .assignment-stat-copy{min-width:0}
-.assignment-stat strong{display:block;font-size:22px;color:#18384f;line-height:1.1}
-.assignment-stat span{display:block;margin-top:4px;font-size:11px;font-weight:600;line-height:1.35;color:#75879a}
+.assignment-stat strong{display:block;font-size:23px;font-weight:800;letter-spacing:-.025em;color:#18384f;line-height:1.1}
+.assignment-stat-copy>span{display:block;margin-top:5px;font-size:12px;font-weight:600;line-height:1.3;color:#75879a}
 .assignment-filter{display:grid;grid-template-columns:repeat(3,minmax(145px,1fr)) minmax(200px,1.35fr) auto;align-items:end;gap:12px;padding:14px;border:1px solid #e1e8ed;border-radius:13px;background:#fff}
 .assignment-filter label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#52677a}
 .assignment-filter select,.assignment-filter input{height:42px;width:100%;border:1px solid #dce5ea;border-radius:9px;background:#fbfcfd;padding:0 11px;color:#263d52;font:inherit;font-size:13px}
@@ -63,8 +64,12 @@
 .candidate-empty{padding:9px;color:#8291a0;font-size:12px}
 .candidate-status{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
 .task-section{margin-top:4px}
-.task-section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:8px}
+.task-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
 .task-section-head h3{margin:0;font-size:17px}
+.task-view-switcher{display:inline-flex;gap:3px;padding:3px;border:1px solid #dce5ea;border-radius:9px;background:#f7f9fa}
+.task-view-switcher button{min-height:30px;padding:6px 12px;border:0;border-radius:6px;background:transparent;color:#718195;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.task-view-switcher button[aria-pressed="true"]{background:#fff;color:#187b89;box-shadow:0 1px 3px rgba(28,52,73,.12)}
+.task-view-panel[hidden]{display:none}
 .task-table-wrap{overflow:auto;border:1px solid #e2e8ed;border-radius:10px;background:#fff}
 .task-table{width:100%;border-collapse:collapse;font-size:12px}
 .task-table th,.task-table td{padding:10px 12px;border-bottom:1px solid #edf1f4;text-align:left;white-space:nowrap}
@@ -134,7 +139,7 @@
         <div>
             <span class="kicker">LAPORAN OPERASIONAL</span>
             <h2>Penugasan Relawan</h2>
-            <p>Kelola laporan banjir dan pilih komunitas relawan yang tepat untuk penanganan.</p>
+            <p>Pilih komunitas relawan untuk menangani laporan banjir.</p>
         </div>
         <div class="assignment-stats">
             <div class="assignment-stat is-waiting">
@@ -154,12 +159,15 @@
 
     <nav class="assignment-tabs" aria-label="Filter status laporan">
         @foreach (['semua' => 'Semua', 'belum_ditugaskan' => 'Belum ditugaskan', 'sudah_ditugaskan' => 'Sudah ditugaskan'] as $key => $label)
-            <a href="{{ route('admin.penugasan.index', array_merge(request()->except('status','page'), ['status' => $key])) }}" class="{{ $statusFilter === $key ? 'active' : '' }}"><span>{{ $label }}</span><span>{{ $jumlahLaporan[$key] }}</span></a>
+            <a href="{{ route('admin.penugasan.index', array_merge(request()->except('status','page','tugas_page','view'), ['status' => $key])) }}" class="{{ $statusFilter === $key ? 'active' : '' }}"><span>{{ $label }}</span><span>{{ $jumlahLaporan[$key] }}</span></a>
         @endforeach
     </nav>
 
     <form method="GET" action="{{ route('admin.penugasan.index') }}" class="assignment-filter">
         <input type="hidden" name="status" value="{{ $statusFilter }}">
+        @if ($statusFilter === 'sudah_ditugaskan')
+            <input type="hidden" name="view" value="{{ $taskView }}" data-task-view-filter>
+        @endif
         <label>Kepercayaan
             <select name="kepercayaan">
                 @foreach (['semua'=>'Semua','rendah'=>'Rendah','sedang'=>'Sedang','tinggi'=>'Tinggi'] as $key=>$label)
@@ -191,10 +199,11 @@
         </div>
     </form>
 
-    @if ($laporan->isEmpty())
-        <div class="empty-state">Tidak ada laporan untuk filter saat ini.</div>
-    @else
-        <div class="report-list">
+    @if ($statusFilter !== 'sudah_ditugaskan')
+        @if ($laporan->isEmpty())
+            <div class="empty-state">Tidak ada laporan untuk filter saat ini.</div>
+        @else
+            <div class="report-list">
             @foreach ($laporan as $item)
                 @php
                     $dataRekomendasi = $rekomendasiLaporan[$item->id];
@@ -251,39 +260,91 @@
                     @endif
                 </article>
             @endforeach
-        </div>
-        <div class="pagination-wrap">{{ $laporan->links() }}</div>
+            </div>
+            <div class="pagination-wrap">{{ $laporan->links() }}</div>
+        @endif
     @endif
 
     @if ($statusFilter === 'sudah_ditugaskan')
     <section class="task-section">
-        <div class="task-section-head"><h3>Daftar penugasan</h3><span class="xs muted">View, Edit, dan Hapus tersedia pada setiap penugasan</span></div>
+        <div class="task-section-head">
+            <h3>Daftar penugasan</h3>
+            <div class="task-view-switcher" role="group" aria-label="Mode tampilan penugasan" data-task-view-switcher data-view="{{ $taskView }}">
+                <button type="button" data-task-view="table" aria-pressed="{{ $taskView === 'table' ? 'true' : 'false' }}">Tabel</button>
+                <button type="button" data-task-view="card" aria-pressed="{{ $taskView === 'card' ? 'true' : 'false' }}">Card</button>
+            </div>
+        </div>
         @if ($daftarTugas->isEmpty())
             <div class="empty-state">Belum ada penugasan tersimpan.</div>
         @else
-        <div class="task-table-wrap">
-            <table class="task-table">
-                <thead><tr><th>Laporan</th><th>Komunitas</th><th>Personel</th><th>Perahu</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
-                <tbody>
-                    @foreach ($daftarTugas as $tugas)
-                        <tr>
-                            <td>P-{{ $tugas->laporanBanjir?->kode_pelacakan ?? '-' }}</td>
-                            <td>{{ $tugas->komunitasRelawan?->nama ?? '-' }}</td>
-                            <td>{{ $tugas->jumlah_personil_tugas }}</td>
-                            <td>{{ $tugas->armada_perahu_tugas }}</td>
-                            <td><span class="tag {{ in_array($tugas->stage,['diterima','menuju_lokasi','ditangani','selesai'],true)?'teal':($tugas->stage==='ditolak'?'red':'navy') }}">{{ ucfirst(str_replace('_',' ', $tugas->stage)) }}</span></td>
-                            <td>{{ $tugas->created_at?->translatedFormat('d M Y, H:i') }}</td>
-                            <td>
-                                <div class="task-actions">
-                                    <button type="button" class="icon-action" data-dialog-id="lihat-penugasan-{{ $tugas->id }}" title="Lihat detail" aria-label="Lihat detail penugasan"><i data-lucide="eye"></i></button>
-                                    <button type="button" class="icon-action" data-dialog-id="edit-penugasan-{{ $tugas->id }}" title="Edit" aria-label="Edit penugasan"><i data-lucide="pencil"></i></button>
-                                    <button type="button" class="icon-action danger" data-dialog-id="hapus-penugasan-{{ $tugas->id }}" title="Hapus" aria-label="Hapus penugasan"><i data-lucide="trash-2"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="task-view-panel" data-task-view-panel="table" @if ($taskView !== 'table') hidden @endif>
+            <div class="task-table-wrap">
+                <table class="task-table">
+                    <thead><tr><th>Laporan</th><th>Komunitas</th><th>Personel</th><th>Perahu</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        @foreach ($daftarTugas as $tugas)
+                            <tr>
+                                <td>P-{{ $tugas->laporanBanjir?->kode_pelacakan ?? '-' }}</td>
+                                <td>{{ $tugas->komunitasRelawan?->nama ?? '-' }}</td>
+                                <td>{{ $tugas->jumlah_personil_tugas }}</td>
+                                <td>{{ $tugas->armada_perahu_tugas }}</td>
+                                <td><span class="tag {{ in_array($tugas->stage,['diterima','menuju_lokasi','ditangani','selesai'],true)?'teal':($tugas->stage==='ditolak'?'red':'navy') }}">{{ ucfirst(str_replace('_',' ', $tugas->stage)) }}</span></td>
+                                <td>{{ $tugas->created_at?->translatedFormat('d M Y, H:i') }}</td>
+                                <td>
+                                    <div class="task-actions">
+                                        <button type="button" class="icon-action" data-dialog-id="lihat-penugasan-{{ $tugas->id }}" title="Lihat detail" aria-label="Lihat detail penugasan"><i data-lucide="eye"></i></button>
+                                        <button type="button" class="icon-action" data-dialog-id="edit-penugasan-{{ $tugas->id }}" title="Edit" aria-label="Edit penugasan"><i data-lucide="pencil"></i></button>
+                                        <button type="button" class="icon-action danger" data-dialog-id="hapus-penugasan-{{ $tugas->id }}" title="Hapus" aria-label="Hapus penugasan"><i data-lucide="trash-2"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="report-list task-view-panel" data-task-view-panel="card" @if ($taskView !== 'card') hidden @endif>
+            @foreach ($daftarTugas as $tugas)
+                @php
+                    $laporanTugas = $tugas->laporanBanjir;
+                    $tahapClass = match ($tugas->stage) {
+                        'menunggu' => 'amber',
+                        'diterima', 'menuju_lokasi', 'ditangani', 'selesai' => 'teal',
+                        'ditolak' => 'red',
+                        default => 'navy',
+                    };
+                    $keparahanClass = match ($laporanTugas?->severity) {
+                        'ringan' => 'teal',
+                        'sedang' => 'amber',
+                        default => 'red',
+                    };
+                @endphp
+                <article class="report-item task-card {{ $laporanTugas?->severity === 'berat' ? 'priority' : '' }}" data-assignment-id="{{ $tugas->id }}">
+                    <div class="report-main">
+                        <div class="report-heading">
+                            <h3>P-{{ $laporanTugas?->kode_pelacakan ?? '-' }}</h3>
+                            <span class="tag {{ $tahapClass }}">{{ ucfirst(str_replace('_', ' ', $tugas->stage)) }}</span>
+                            <span class="tag {{ $keparahanClass }}">Keparahan {{ ucfirst($laporanTugas?->severity ?? 'tidak diketahui') }}</span>
+                        </div>
+                        <div class="report-location">
+                            {{ $tugas->komunitasRelawan?->nama ?? 'Komunitas tidak diketahui' }}
+                            &middot; {{ $laporanTugas?->wilayah?->nama_kelurahan ?? 'Wilayah tidak diketahui' }}
+                            &middot; {{ $laporanTugas?->alamat_singkat ?: 'Lokasi laporan' }}
+                        </div>
+                        <div class="report-facts">
+                            <span>Laporan {{ $laporanTugas?->created_at?->translatedFormat('d M Y, H:i') ?? '-' }}</span>
+                            <span><strong>{{ $laporanTugas?->jumlah_warga ?? '-' }}</strong> warga terdampak</span>
+                            <span>Kepercayaan <strong>{{ ucfirst($laporanTugas?->tingkat_kepercayaan ?? 'belum dinilai') }}</strong></span>
+                            <span><strong>{{ $tugas->jumlah_personil_tugas }}</strong> personel · {{ $tugas->armada_perahu_tugas }} perahu</span>
+                        </div>
+                    </div>
+                    <div class="report-actions task-actions">
+                        <button type="button" class="icon-action" data-dialog-id="lihat-penugasan-{{ $tugas->id }}" title="Lihat detail" aria-label="Lihat detail penugasan"><i data-lucide="eye"></i></button>
+                        <button type="button" class="icon-action" data-dialog-id="edit-penugasan-{{ $tugas->id }}" title="Edit" aria-label="Edit penugasan"><i data-lucide="pencil"></i></button>
+                        <button type="button" class="icon-action danger" data-dialog-id="hapus-penugasan-{{ $tugas->id }}" title="Hapus" aria-label="Hapus penugasan"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </article>
+            @endforeach
         </div>
         @foreach ($daftarTugas as $tugas)
             @php
@@ -416,6 +477,29 @@ document.querySelectorAll('[data-toggle-recommendations]').forEach(button=>butto
 document.querySelectorAll('[data-select-candidate]').forEach(button=>button.addEventListener('click',()=>{const report=button.closest('.report-item');report?.querySelectorAll('.candidate.selected').forEach(candidate=>candidate.classList.remove('selected'));button.closest('.candidate')?.classList.add('selected')}));
 document.querySelectorAll('[data-transfer-community]').forEach(select=>{const form=select.closest('form');const reason=form?.querySelector('[data-transfer-reason]');const reasonSection=form?.querySelector('[data-transfer-reason-section]');const personnel=form?.querySelector('[data-transfer-personnel]');const boats=form?.querySelector('[data-transfer-boats]');const updateTransferFields=()=>{const option=select.options[select.selectedIndex];const transferring=select.value!=='';if(reason){reason.required=transferring}if(reasonSection){reasonSection.hidden=!transferring}if(personnel){personnel.readOnly=personnel.hasAttribute('data-reassign-only')&&!transferring;if(personnel.hasAttribute('data-reassign-only'))personnel.required=transferring;personnel.max=option?.dataset.maxPersonil||''}if(boats){boats.readOnly=boats.hasAttribute('data-reassign-only')&&!transferring;boats.max=option?.dataset.maxPerahu||''}};select.addEventListener('change',updateTransferFields);updateTransferFields();});
 document.querySelectorAll('[data-submit-state]').forEach(form=>form.addEventListener('submit',()=>{const button=form.querySelector('button[type=\"submit\"]');if(button&&form.reportValidity()){button.disabled=true;button.textContent='Menyimpan...'}}));
+document.querySelectorAll('[data-task-view-switcher]').forEach(switcher=>{
+    const section=switcher.closest('.task-section');
+    const setView=view=>{
+        switcher.dataset.view=view;
+        switcher.querySelectorAll('[data-task-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.taskView===view)));
+        section?.querySelectorAll('[data-task-view-panel]').forEach(panel=>{panel.hidden=panel.dataset.taskViewPanel!==view});
+        const filterInput=document.querySelector('[data-task-view-filter]');
+        if(filterInput)filterInput.value=view;
+        const url=new URL(window.location.href);
+        if(view==='table')url.searchParams.delete('view');else url.searchParams.set('view',view);
+        section?.querySelectorAll('.pagination-wrap a[href]').forEach(link=>{
+            const pageUrl=new URL(link.href,window.location.href);
+            if(view==='table')pageUrl.searchParams.delete('view');else pageUrl.searchParams.set('view',view);
+            link.href=pageUrl;
+        });
+        window.history.replaceState({},'',url);
+    };
+    switcher.addEventListener('click',event=>{
+        const button=event.target.closest('button[data-task-view]');
+        if(button)setView(button.dataset.taskView);
+    });
+    setView(switcher.dataset.view||'table');
+});
 if(window.lucide)window.lucide.createIcons();
 </script>
 @endpush

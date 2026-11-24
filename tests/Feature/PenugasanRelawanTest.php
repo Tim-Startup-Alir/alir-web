@@ -123,16 +123,20 @@ test('admin page shows actual reports and assignment status tabs', function () {
 
     $response->assertOk()
         ->assertSee('LAPORAN')
-        ->assertSee('Kelola laporan banjir dan pilih komunitas relawan yang tepat untuk penanganan.')
+        ->assertSee('Pilih komunitas relawan untuk menangani laporan banjir.')
         ->assertDontSee('Haversine')
         ->assertSee('data-lucide="clock"', false)
         ->assertSee('data-lucide="users"', false)
         ->assertSee('data-lucide="triangle-alert"', false)
+        ->assertSee('.assignment-stat-icon{display:flex;align-items:center;justify-content:center;', false)
+        ->assertSee('.assignment-stat-copy>span{', false)
+        ->assertDontSee('.assignment-stat span{', false)
         ->assertSee('P-'.$belumDitugaskan->kode_pelacakan.' &middot; Tirto', false)
         ->assertSee('<strong>'.$belumDitugaskan->jumlah_warga.'</strong> warga', false)
         ->assertSee('tag red">Keparahan Berat', false)
         ->assertSee('tag amber">Belum ditugaskan', false)
         ->assertSee('data-dialog-id="assign-dialog-'.$belumDitugaskan->id.'-'.$komunitas->id.'"', false)
+        ->assertSee('name="komunitas_relawan_id" value="'.$komunitas->id.'"', false)
         ->assertSee('name="jumlah_personil_tugas" min="1"', false)
         ->assertSee('name="armada_perahu_tugas" min="0"', false)
         ->assertSee('name="catatan"', false)
@@ -152,18 +156,79 @@ test('admin page shows actual reports and assignment status tabs', function () {
         ->assertSee('id="laporan-'.$sudahDitugaskan->id.'"', false)
         ->assertDontSee('class="task-section"', false);
 
-    $this->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
+    $assignedResponse = $this->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
         ->assertOk()
-        ->assertSee('id="laporan-'.$sudahDitugaskan->id.'"', false)
         ->assertSee('P-'.$sudahDitugaskan->kode_pelacakan, false)
         ->assertSee('class="task-section"', false)
+        ->assertSee('data-task-view="table" aria-pressed="true"', false)
+        ->assertSee('data-task-view-panel="table"', false)
+        ->assertSee('data-task-view-panel="card"', false)
+        ->assertDontSee('id="laporan-'.$sudahDitugaskan->id.'"', false)
         ->assertDontSee('id="laporan-'.$belumDitugaskan->id.'"', false)
         ->assertDontSee('class="groups"', false)
         ->assertDontSee('class="candidate-list"', false)
-        ->assertSee('Lihat penugasan')
+        ->assertDontSee('Lihat penugasan')
         ->assertSee('lihat-penugasan-'.$penugasan->id, false)
         ->assertSee('edit-penugasan-'.$penugasan->id, false)
         ->assertSee('hapus-penugasan-'.$penugasan->id, false);
+
+    $cardResponse = $this->get(route('admin.penugasan.index', [
+        'status' => 'sudah_ditugaskan',
+        'view' => 'card',
+    ]))->assertOk()
+        ->assertSee('data-task-view="card" aria-pressed="true"', false)
+        ->assertSee('data-task-view-panel="table"', false)
+        ->assertSee('data-task-view-panel="card"', false)
+        ->assertSee('data-assignment-id="'.$penugasan->id.'"', false)
+        ->assertSee($komunitas->nama)
+        ->assertSee('Keparahan')
+        ->assertSee('data-dialog-id="lihat-penugasan-'.$penugasan->id.'"', false)
+        ->assertSee('data-dialog-id="edit-penugasan-'.$penugasan->id.'"', false)
+        ->assertSee('data-dialog-id="hapus-penugasan-'.$penugasan->id.'"', false)
+        ->assertSee('id="hapus-penugasan-'.$penugasan->id.'"', false);
+
+    $cardHtml = $cardResponse->getContent();
+    expect($assignedResponse->getContent())->toMatch('/data-task-view-panel="card"\s+hidden/')
+        ->and($cardHtml)->toMatch('/data-task-view-panel="table"\s+hidden/')
+        ->and(substr_count($cardHtml, 'data-dialog-id="lihat-penugasan-'.$penugasan->id.'"'))->toBe(2)
+        ->and(substr_count($cardHtml, 'data-dialog-id="edit-penugasan-'.$penugasan->id.'"'))->toBe(2)
+        ->and(substr_count($cardHtml, 'data-dialog-id="hapus-penugasan-'.$penugasan->id.'"'))->toBe(2)
+        ->and($assignedResponse->viewData('daftarTugas')->total())->toBe(1)
+        ->and($cardResponse->viewData('daftarTugas')->total())->toBe(1);
+});
+
+test('admin assignment page excludes Demo F-05 reports without deleting their assignments', function () {
+    $laporanDemo = laporanUntukPenugasan();
+    $laporanDemo->update(['kode_pelacakan' => 'DEMO-F05-PKR-H03']);
+    $laporanAktual = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+
+    $penugasanDemo = Penugasan::create([
+        'laporan_banjir_id' => $laporanDemo->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 1,
+        'stage' => 'menunggu',
+    ]);
+    $penugasanAktual = Penugasan::create([
+        'laporan_banjir_id' => $laporanAktual->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 1,
+        'stage' => 'menunggu',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
+        ->assertOk()
+        ->assertDontSee('DEMO-F05-PKR-H03')
+        ->assertSee('P-'.$laporanAktual->kode_pelacakan, false);
+
+    expect($response->viewData('daftarTugas')->total())->toBe(1)
+        ->and(Penugasan::whereKey($penugasanDemo->id)->exists())->toBeTrue()
+        ->and(Penugasan::whereKey($penugasanAktual->id)->exists())->toBeTrue()
+        ->and($response->viewData('jumlahLaporan')['semua'])->toBe(1);
 });
 
 test('admin can assign an eligible community and the in-app notification is persisted', function () {
@@ -353,6 +418,71 @@ test('admin can edit a pending assignment and the change is audited and notified
         ->and($penugasan->fresh()->catatan)->toBe('Perubahan jumlah personel.')
         ->and(AuditLog::where('aksi', 'penugasan.perbarui')->where('subjek_id', $penugasan->id)->exists())->toBeTrue()
         ->and($komunitas->user->notifications()->where('type', PenugasanRelawanNotification::class)->exists())->toBeTrue();
+});
+
+test('edit action targets and updates the selected assignment in both admin views', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'armada_perahu_tugas' => 0,
+        'stage' => 'menunggu',
+    ]);
+
+    $jumlahPersonilSaatIni = 2;
+    foreach (['table' => 3, 'card' => 4] as $view => $jumlahPersonil) {
+        $url = route('admin.penugasan.index', [
+            'status' => 'sudah_ditugaskan',
+            'view' => $view,
+        ]);
+        $this->actingAs($admin)
+            ->get($url)
+            ->assertOk()
+            ->assertSee('data-dialog-id="edit-penugasan-'.$penugasan->id.'"', false)
+            ->assertSee('id="edit-penugasan-'.$penugasan->id.'"', false)
+            ->assertSee('action="'.route('admin.penugasan.update', $penugasan).'"', false)
+            ->assertSee('name="jumlah_personil_tugas" min="1" value="'.$jumlahPersonilSaatIni.'" required', false);
+
+        $this->from($url)->patch(route('admin.penugasan.update', $penugasan), [
+            'jumlah_personil_tugas' => $jumlahPersonil,
+            'armada_perahu_tugas' => 0,
+            'catatan' => "Disimpan dari mode {$view}.",
+        ])->assertRedirect($url)->assertSessionHas('success');
+
+        expect($penugasan->fresh()->jumlah_personil_tugas)->toBe($jumlahPersonil)
+            ->and($penugasan->fresh()->catatan)->toBe("Disimpan dari mode {$view}.");
+        $jumlahPersonilSaatIni = $jumlahPersonil;
+    }
+});
+
+test('editing a cancelled assignment note works when its read-only fields are omitted', function () {
+    $laporan = laporanUntukPenugasan();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+    $komunitas = KomunitasRelawan::where('nama', 'Komunitas Relawan Tirto')->firstOrFail();
+    $penugasan = Penugasan::create([
+        'laporan_banjir_id' => $laporan->id,
+        'komunitas_relawan_id' => $komunitas->id,
+        'ditugaskan_oleh' => $admin->id,
+        'jumlah_personil_tugas' => 2,
+        'armada_perahu_tugas' => 1,
+        'stage' => 'dibatalkan',
+    ]);
+
+    $url = route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']);
+    $this->actingAs($admin)->from($url)
+        ->patch(route('admin.penugasan.update', $penugasan), [
+            'catatan' => 'Catatan untuk penugasan yang dibatalkan.',
+        ])
+        ->assertRedirect($url)
+        ->assertSessionHas('success');
+
+    expect($penugasan->fresh()->catatan)->toBe('Catatan untuk penugasan yang dibatalkan.')
+        ->and($penugasan->fresh()->jumlah_personil_tugas)->toBe(2)
+        ->and($penugasan->fresh()->armada_perahu_tugas)->toBe(1);
 });
 
 test('admin can cancel a pending assignment without deleting it', function () {

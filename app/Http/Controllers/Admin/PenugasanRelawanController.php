@@ -19,6 +19,8 @@ use Throwable;
 
 class PenugasanRelawanController extends Controller
 {
+    private const KODE_DEMO_F05 = 'DEMO-F05-%';
+
     public function index(
         Request $request,
         RekomendasiPenugasanService $rekomendasi
@@ -29,14 +31,17 @@ class PenugasanRelawanController extends Controller
             'kepercayaan' => ['sometimes', 'in:semua,rendah,sedang,tinggi'],
             'kelurahan' => ['sometimes', 'nullable', 'integer', 'exists:wilayah,id'],
             'q' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'view' => ['sometimes', 'in:table,card'],
         ]);
         $statusFilter = $validated['status'] ?? 'semua';
         $severityFilter = $validated['severitas'] ?? 'semua';
         $confidenceFilter = $validated['kepercayaan'] ?? 'semua';
         $villageFilter = $validated['kelurahan'] ?? null;
         $search = trim((string) ($validated['q'] ?? ''));
+        $taskView = $validated['view'] ?? 'table';
 
         $laporanDasar = LaporanBanjir::query()
+            ->where('kode_pelacakan', 'not like', self::KODE_DEMO_F05)
             ->whereIn('status', ['terverifikasi', 'ditugaskan']);
         $penugasanAktif = fn ($query) => $query->whereIn('stage', Penugasan::STAGE_AKTIF);
         $belumDitugaskan = (clone $laporanDasar)
@@ -84,38 +89,40 @@ class PenugasanRelawanController extends Controller
         );
         $daftarTugas = Penugasan::query()
             ->with(['laporanBanjir.wilayah', 'komunitasRelawan'])
+            ->whereHas('laporanBanjir', fn ($q) => $q->where('kode_pelacakan', 'not like', self::KODE_DEMO_F05))
+            ->when($villageFilter, fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('wilayah_id', $villageFilter)))
+            ->when($severityFilter !== 'semua', fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('severity', $severityFilter)))
+            ->when($confidenceFilter !== 'semua', fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('tingkat_kepercayaan', $confidenceFilter)))
+            ->when($search !== '', fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('kode_pelacakan', 'like', "%{$search}%")->orWhere('alamat_singkat', 'like', "%{$search}%")))
             ->latest()
             ->paginate(10, ['*'], 'tugas_page')
             ->withQueryString();
-        $opsiEditPenugasan = collect();
-        if ($statusFilter === 'sudah_ditugaskan') {
-            $opsiEditPenugasan = $daftarTugas->getCollection()
-                ->mapWithKeys(function (Penugasan $tugas) use ($rekomendasi): array {
-                    $komunitas = $tugas->komunitasRelawan;
-                    $tugasAktifLain = $komunitas->penugasan()
-                        ->whereIn('stage', Penugasan::STAGE_AKTIF)
-                        ->where('id', '!=', $tugas->id)
-                        ->get();
-                    $kelompok = $rekomendasi->untukLaporan($tugas->laporanBanjir)['kelompok'];
-                    $kandidat = collect($kelompok)
-                        ->flatMap(fn (array $group) => $group['kandidat'])
-                        ->filter(fn (array $item) => $item['bisa_ditugaskan']
-                            && (int) $item['komunitas']->id !== (int) $komunitas->id)
-                        ->values();
+        $opsiEditPenugasan = $daftarTugas->getCollection()
+            ->mapWithKeys(function (Penugasan $tugas) use ($rekomendasi): array {
+                $komunitas = $tugas->komunitasRelawan;
+                $tugasAktifLain = $komunitas->penugasan()
+                    ->whereIn('stage', Penugasan::STAGE_AKTIF)
+                    ->where('id', '!=', $tugas->id)
+                    ->get();
+                $kelompok = $rekomendasi->untukLaporan($tugas->laporanBanjir)['kelompok'];
+                $kandidat = collect($kelompok)
+                    ->flatMap(fn (array $group) => $group['kandidat'])
+                    ->filter(fn (array $item) => $item['bisa_ditugaskan']
+                        && (int) $item['komunitas']->id !== (int) $komunitas->id)
+                    ->values();
 
-                    return [$tugas->id => [
-                        'maks_personil_saat_ini' => max(
-                            0,
-                            $komunitas->kapasitas_max - (int) $tugasAktifLain->sum('jumlah_personil_tugas')
-                        ),
-                        'maks_perahu_saat_ini' => max(
-                            0,
-                            $komunitas->jumlah_perahu - (int) $tugasAktifLain->sum('armada_perahu_tugas')
-                        ),
-                        'kandidat' => $kandidat,
-                    ]];
-                });
-        }
+                return [$tugas->id => [
+                    'maks_personil_saat_ini' => max(
+                        0,
+                        $komunitas->kapasitas_max - (int) $tugasAktifLain->sum('jumlah_personil_tugas')
+                    ),
+                    'maks_perahu_saat_ini' => max(
+                        0,
+                        $komunitas->jumlah_perahu - (int) $tugasAktifLain->sum('armada_perahu_tugas')
+                    ),
+                    'kandidat' => $kandidat,
+                ]];
+            });
         $opsiKelurahan = \App\Models\Wilayah::query()
             ->whereIn('nama_kelurahan', ['Tirto', 'Pasirkraton Kramat', 'Pasirkratonkramat', 'Degayu'])
             ->aktif()
@@ -135,7 +142,8 @@ class PenugasanRelawanController extends Controller
             'opsiKelurahan',
             'opsiEditPenugasan',
             'rekomendasiLaporan',
-            'statusFilter'
+            'statusFilter',
+            'taskView'
         ));
     }
 
@@ -306,9 +314,12 @@ class PenugasanRelawanController extends Controller
         Penugasan $penugasan,
         PenugasanRelawanService $service
     ): JsonResponse|RedirectResponse {
+        $jumlahPersonilRules = $penugasan->stage === 'menunggu'
+            ? ['required', 'integer', 'min:1']
+            : ['nullable', 'required_with:komunitas_relawan_id', 'integer', 'min:1'];
         $data = $request->validate([
-            'jumlah_personil_tugas' => ['nullable', 'integer', 'min:1'],
-            'armada_perahu_tugas' => ['nullable', 'integer', 'min:0'],
+            'jumlah_personil_tugas' => $jumlahPersonilRules,
+            'armada_perahu_tugas' => ['nullable', 'required_with:komunitas_relawan_id', 'integer', 'min:0'],
             'catatan' => ['nullable', 'string', 'max:1000'],
             'komunitas_relawan_id' => [
                 'nullable',
@@ -341,8 +352,8 @@ class PenugasanRelawanController extends Controller
         } else {
             $hasil = $service->perbarui(
                 $penugasan,
-                (int) $data['jumlah_personil_tugas'],
-                (int) ($data['armada_perahu_tugas'] ?? 0),
+                (int) ($data['jumlah_personil_tugas'] ?? $penugasan->jumlah_personil_tugas),
+                (int) ($data['armada_perahu_tugas'] ?? $penugasan->armada_perahu_tugas),
                 $data['catatan'] ?? null,
                 $admin
             );
