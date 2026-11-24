@@ -4,7 +4,9 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
 use App\Http\Controllers\Admin\KonfirmasiLapanganController as AdminKonfirmasiLapanganController;
+use App\Http\Controllers\Admin\PenugasanController;
 use App\Http\Controllers\Admin\PetaLaporanController;
+use App\Http\Controllers\Admin\VerifikasiLaporanController;
 use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\EmailVerificationController;
@@ -94,6 +96,18 @@ Route::prefix('admin')
             ->names('jadwal')
             ->parameters(['jadwal-kesiapsiagaan' => 'jadwal'])
             ->except(['show']);
+        // F-04 Verifikasi Laporan (PBI-010, PBI-011, PBI-012)
+        Route::get('laporan/verifikasi', [VerifikasiLaporanController::class, 'index'])->name('laporan.verifikasi.index');
+        Route::get('laporan/verifikasi/{laporan}', [VerifikasiLaporanController::class, 'show'])->name('laporan.verifikasi.show');
+        Route::post('laporan/{laporan}/valid', [VerifikasiLaporanController::class, 'valid'])->middleware('throttle:30,1')->name('laporan.valid');
+        Route::post('laporan/{laporan}/tolak', [VerifikasiLaporanController::class, 'tidakValid'])->middleware('throttle:30,1')->name('laporan.tolak');
+        Route::post('laporan/{laporan}/duplikat', [VerifikasiLaporanController::class, 'duplikat'])->middleware('throttle:30,1')->name('laporan.duplikat');
+
+        // F-05 Penugasan Relawan (PBI-013)
+        Route::get('laporan/penugasan', [PenugasanController::class, 'index'])->name('penugasan.index');
+        Route::post('laporan/{laporan}/penugasan', [PenugasanController::class, 'store'])->middleware('throttle:30,1')->name('penugasan.store');
+        Route::patch('penugasan/{penugasan}/ganti', [PenugasanController::class, 'ganti'])->middleware('throttle:30,1')->name('penugasan.ganti');
+        Route::delete('penugasan/{penugasan}', [PenugasanController::class, 'destroy'])->middleware('throttle:30,1')->name('penugasan.destroy');
     });
 
 Route::prefix('komunitas')

@@ -17,8 +17,13 @@
   .ng-h span{flex:1}
   .ng-h .chev{width:16px;height:16px;transition:transform .3s var(--ease);opacity:.7}
   .ng.open .ng-h .chev{transform:rotate(180deg)}
-  .ng-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease)}
-  .ng.open .ng-b{grid-template-rows:1fr}
+  .ng-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease),opacity .2s var(--ease);opacity:0;visibility:hidden}
+  .ng.open .ng-b{grid-template-rows:1fr;opacity:1;visibility:visible}
+  .ng-h .nav-total-badge{margin-left:auto;min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--coral);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center}
+  .ng.open .ng-h .nav-total-badge{display:none}
+  .side a .badge.badge-navy{background:var(--navy-3,#1B3560);color:#fff}
+  .side a.on .badge.badge-navy{background:var(--navy);color:#fff}
+  .side a .badge.badge-yellow{background:#F5B82E;color:var(--navy)}
   .ng-b>div{overflow:hidden;min-height:0;margin:2px 0 4px 22px;padding-left:8px;border-left:1.5px solid rgba(148,163,184,.25)}
   .ng-b a{padding:9px 10px;font-size:13.5px;border-radius:12px;margin:1px 0}
   .kpi-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}

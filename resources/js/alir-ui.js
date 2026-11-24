@@ -44,6 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const willOpen = !group.classList.contains('open');
             group.classList.toggle('open', willOpen);
             btn.setAttribute('aria-expanded', String(willOpen));
+            const body = group.querySelector('.ng-b');
+            if (body) {
+                if (willOpen) {
+                    body.removeAttribute('inert');
+                } else {
+                    body.setAttribute('inert', '');
+                }
+            }
         });
     });
 

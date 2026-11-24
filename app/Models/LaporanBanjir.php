@@ -38,6 +38,21 @@ class LaporanBanjir extends Model
         ];
     }
 
+    public function scopeMenunggu($query)
+    {
+        return $query->where('status', 'menunggu_verifikasi');
+    }
+
+    public function scopeTerverifikasi($query)
+    {
+        return $query->where('status', 'terverifikasi');
+    }
+
+    public function scopeDitolak($query)
+    {
+        return $query->where('status', 'ditolak');
+    }
+
     public function induk(): BelongsTo
     {
         return $this->belongsTo(self::class, 'laporan_banjir_induk_id');

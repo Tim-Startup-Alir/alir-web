@@ -31,13 +31,42 @@
             <i data-lucide="layout-dashboard"></i>Ringkasan
         </a>
 
-        {{-- F-03 Pemetaan Titik Banjir --}}
-        <div class="ng {{ request()->routeIs('admin.peta-laporan.*') ? 'open has-on' : '' }}">
-            <button type="button" class="ng-h" aria-expanded="{{ request()->routeIs('admin.peta-laporan.*') ? 'true' : 'false' }}">
-                <i data-lucide="map-pinned"></i><span>Laporan</span><i data-lucide="chevron-down" class="chev"></i>
+        {{-- F-03 & F-04 Grup Laporan --}}
+        @php
+            $laporanGroupActive = request()->routeIs('admin.laporan.*', 'admin.peta-laporan.*', 'admin.penugasan.*');
+            $verifikasiCount = \Illuminate\Support\Facades\Cache::remember('admin.sidebar.verifikasi_count', 30, function () {
+                return \App\Models\LaporanBanjir::where('status', 'menunggu_verifikasi')->count();
+            });
+            $penugasanCount = \Illuminate\Support\Facades\Cache::remember('admin.sidebar.penugasan_count', 30, function () {
+                return \App\Models\LaporanBanjir::where('status', 'terverifikasi')
+                    ->whereDoesntHave('penugasan', fn ($q) => $q->whereNotIn('stage', ['ditolak', 'dibatalkan']))
+                    ->count();
+            });
+            $totalLaporanBadge = $verifikasiCount + $penugasanCount;
+            $formatBadge = fn (int $n): string => $n > 99 ? '99+' : (string) $n;
+        @endphp
+        <div class="ng {{ $laporanGroupActive ? 'open has-on' : '' }}" id="nav-group-laporan">
+            <button type="button" class="ng-h nav-parent" aria-expanded="{{ $laporanGroupActive ? 'true' : 'false' }}" aria-controls="submenu-laporan" dusk="nav-laporan-toggle">
+                <i data-lucide="siren"></i><span>Laporan</span>
+                @if ($totalLaporanBadge > 0)
+                    <span class="badge nav-total-badge" dusk="nav-laporan-total-badge">{{ $formatBadge($totalLaporanBadge) }}</span>
+                @endif
+                <i data-lucide="chevron-down" class="chev"></i>
             </button>
-            <div class="ng-b"><div>
-                <a href="{{ route('admin.peta-laporan.index') }}" class="{{ request()->routeIs('admin.peta-laporan.*') ? 'on' : '' }}">
+            <div class="ng-b" id="submenu-laporan" @if(! $laporanGroupActive) inert @endif><div>
+                <a href="{{ route('admin.laporan.verifikasi.index') }}" class="{{ request()->routeIs('admin.laporan.verifikasi.*') ? 'on' : '' }}" dusk="nav-verifikasi">
+                    <i data-lucide="shield-check"></i>Verifikasi
+                    @if ($verifikasiCount > 0)
+                        <span class="badge badge-navy" dusk="nav-verifikasi-badge">{{ $formatBadge($verifikasiCount) }}</span>
+                    @endif
+                </a>
+                <a href="{{ Route::has('admin.penugasan.index') ? route('admin.penugasan.index') : '#' }}" class="{{ request()->routeIs('admin.penugasan.*') ? 'on' : '' }}" dusk="nav-penugasan">
+                    <i data-lucide="git-branch"></i>Penugasan
+                    @if ($penugasanCount > 0)
+                        <span class="badge badge-yellow" dusk="nav-penugasan-badge">{{ $formatBadge($penugasanCount) }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.peta-laporan.index') }}" class="{{ request()->routeIs('admin.peta-laporan.*') ? 'on' : '' }}" dusk="nav-peta-laporan">
                     <i data-lucide="map"></i>Peta Laporan
                 </a>
             </div></div>
