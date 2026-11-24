@@ -21,7 +21,7 @@ class LaporanDemoSeeder extends Seeder
         foreach ($wilayah as $nama => $area) {
             $pusat = LaporanBanjirFactory::new()->create([
                 'wilayah_id' => $area->id, 'latitude' => (float) $area->latitude, 'longitude' => (float) $area->longitude,
-                'alamat_singkat' => "Laporan demo {$nama}", 'created_at' => now()->subMinutes(15),
+                'alamat_singkat' => "Laporan {$nama}", 'created_at' => now()->subMinutes(15),
             ]);
             $jumlah = $nama === 'Tirto' ? 4 : ($nama === 'Pasirkratonkramat' ? 1 : 0);
             for ($i = 0; $i < $jumlah; $i++) {
