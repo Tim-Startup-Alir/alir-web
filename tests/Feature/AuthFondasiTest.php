@@ -7,7 +7,11 @@ use App\Models\Wilayah;
 use Database\Seeders\KomunitasDefaultSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 
 uses(RefreshDatabase::class);
@@ -175,4 +179,128 @@ test('pengguna dapat logout dengan bersih', function () {
         ->assertRedirect(route('login'));
 
     $this->assertGuest();
+});
+
+test('akun nonaktif juga diblokir di route ganti-sandi dan verifikasi email saat sesi berjalan', function () {
+    $user = User::where('email', 'komunitas.tirto@alir.test')->firstOrFail();
+    $this->actingAs($user);
+    $user->update(['is_active' => false]);
+
+    $this->get('/ganti-sandi')->assertRedirect(route('login'));
+    $this->assertGuest();
+
+    $this->actingAs($user);
+    $this->put('/ganti-sandi', [
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertRedirect(route('login'));
+    $this->assertGuest();
+
+    $this->actingAs($user);
+    $this->get('/email/verify')->assertRedirect(route('login'));
+    $this->assertGuest();
+});
+
+test('put ganti-sandi tidak memproses akun yang wajib_ganti_sandi sudah false dan merotasi token saat berhasil', function () {
+    $user = User::where('email', 'komunitas.tirto@alir.test')->firstOrFail();
+    $user->forceFill(['wajib_ganti_sandi' => false, 'remember_token' => 'token-awal'])->save();
+    $hashAwal = $user->password;
+
+    $this->actingAs($user)
+        ->put('/ganti-sandi', [
+            'password' => 'sandibaru123',
+            'password_confirmation' => 'sandibaru123',
+        ])
+        ->assertRedirect(route('komunitas.dashboard'));
+
+    $user->refresh();
+    expect($user->password)->toBe($hashAwal);
+    expect(AuditLog::where('aksi', 'auth.ganti_sandi')->where('user_id', $user->id)->exists())->toBeFalse();
+
+    // Kini uji rotasi remember_token & pencabutan sesi database lain saat wajib_ganti_sandi = true
+    $user->forceFill(['wajib_ganti_sandi' => true])->save();
+    config(['session.driver' => 'database']);
+    DB::table('sessions')->insert([
+        'id' => 'sesi-perangkat-lain',
+        'user_id' => $user->id,
+        'ip_address' => '127.0.0.2',
+        'user_agent' => 'OtherBrowser',
+        'payload' => base64_encode('test'),
+        'last_activity' => time(),
+    ]);
+
+    $this->actingAs($user)
+        ->put('/ganti-sandi', [
+            'password' => 'sandibaru123',
+            'password_confirmation' => 'sandibaru123',
+        ])
+        ->assertRedirect(route('komunitas.dashboard'));
+
+    $user->refresh();
+    expect($user->remember_token)->not->toBe('token-awal');
+    expect(Hash::check('sandibaru123', $user->password))->toBeTrue();
+    expect(DB::table('sessions')->where('id', 'sesi-perangkat-lain')->exists())->toBeFalse();
+});
+
+test('lupa sandi mencegah email enumeration dan menolak reset dengan sandi yang sama atau akun nonaktif', function () {
+    Notification::fake();
+
+    $nonaktif = User::factory()->nonaktif()->create(['email' => 'nonaktif-reset@alir.test']);
+
+    $this->post('/lupa-sandi', ['email' => 'tidak-ada@alir.test'])
+        ->assertSessionHas('success')
+        ->assertSessionHasNoErrors();
+
+    $this->post('/lupa-sandi', ['email' => $nonaktif->email])
+        ->assertSessionHas('success')
+        ->assertSessionHasNoErrors();
+
+    Notification::assertNothingSent();
+
+    $tirto = User::where('email', 'komunitas.tirto@alir.test')->firstOrFail();
+    $this->post('/lupa-sandi', ['email' => strtoupper($tirto->email)])
+        ->assertSessionHas('success');
+
+    Notification::assertSentTo($tirto, ResetPassword::class);
+
+    // Reset dengan kata sandi yang sama ditolak & tidak menghapus wajib_ganti_sandi
+    $token = Password::createToken($tirto);
+    $this->post(route('password.update'), [
+        'token' => $token,
+        'email' => $tirto->email,
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertSessionHasErrors('password');
+
+    expect($tirto->fresh()->wajib_ganti_sandi)->toBeTrue();
+
+    // Reset untuk akun nonaktif ditolak
+    $tokenNonaktif = Password::createToken($nonaktif);
+    $this->post(route('password.update'), [
+        'token' => $tokenNonaktif,
+        'email' => $nonaktif->email,
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertSessionHasErrors('email');
+});
+
+test('lupa sandi dan reset sandi dibatasi oleh rate limiter', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $this->withServerVariables(['REMOTE_ADDR' => '10.20.30.40'])
+            ->post('/lupa-sandi', ['email' => "uji{$i}@alir.test"])
+            ->assertRedirect();
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '10.20.30.40'])
+        ->post('/lupa-sandi', ['email' => 'uji6@alir.test'])
+        ->assertTooManyRequests();
+});
+
+test('login admin tidak diarahkan ke url intended milik panel komunitas', function () {
+    $this->get('/komunitas')->assertRedirect(route('login'));
+
+    $this->post('/login', [
+        'email' => 'admin@alir.test',
+        'password' => 'password',
+    ])->assertRedirect(route('admin.dashboard'));
 });
