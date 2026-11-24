@@ -60,6 +60,9 @@
                     placeholder="Ulangi kata sandi baru"
                     required
                 >
+                <button type="button" class="eye" data-toggle-password="password_confirmation" aria-label="Tampilkan sandi">
+                    <i data-lucide="eye"></i>
+                </button>
             </div>
         </div>
 

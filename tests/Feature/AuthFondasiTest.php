@@ -45,6 +45,9 @@ test('komunitas dengan wajib_ganti_sandi diarahkan ke halaman ganti sandi sebelu
 
     $response->assertRedirect(route('password.force.edit'));
     $this->get('/komunitas')->assertRedirect(route('password.force.edit'));
+    $this->get(route('password.force.edit'))
+        ->assertOk()
+        ->assertSee('data-toggle-password="password_confirmation"', false);
 
     $this->put('/ganti-sandi', [
         'password' => 'sandibaru123',
@@ -55,6 +58,29 @@ test('komunitas dengan wajib_ganti_sandi diarahkan ke halaman ganti sandi sebelu
     expect($user->wajib_ganti_sandi)->toBeFalse();
 
     $this->get('/komunitas')->assertOk()->assertSee('Komunitas Relawan Tirto');
+});
+
+test('komunitas wajib ganti sandi ditolak jika memakai kata sandi yang sama dengan sandi awal', function () {
+    $this->post('/login', [
+        'email' => 'komunitas.tirto@alir.test',
+        'password' => 'password',
+    ])->assertRedirect(route('password.force.edit'));
+
+    $this->from('/ganti-sandi')
+        ->put('/ganti-sandi', [
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertRedirect('/ganti-sandi')
+        ->assertSessionHasErrors('password');
+
+    expect(session('errors')->first('password'))->toContain('tidak boleh sama');
+
+    $user = User::where('email', 'komunitas.tirto@alir.test')->firstOrFail();
+    expect($user->wajib_ganti_sandi)->toBeTrue();
+    expect(AuditLog::where('aksi', 'auth.ganti_sandi')->where('user_id', $user->id)->exists())->toBeFalse();
+
+    $this->get('/komunitas')->assertRedirect(route('password.force.edit'));
 });
 
 test('akun nonaktif ditolak saat login dan bila dinonaktifkan saat sesi berjalan', function () {
@@ -126,7 +152,8 @@ test('lupa dan reset kata sandi berfungsi dan menghapus wajib_ganti_sandi', func
 
     $this->get(route('password.reset', ['token' => $token, 'email' => $user->email]))
         ->assertOk()
-        ->assertSee('Atur ulang kata sandi');
+        ->assertSee('Atur ulang kata sandi')
+        ->assertSee('data-toggle-password="password_confirmation"', false);
 
     $this->post(route('password.update'), [
         'token' => $token,
