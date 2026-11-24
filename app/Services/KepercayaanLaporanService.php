@@ -19,22 +19,17 @@ class KepercayaanLaporanService
             'laporan_sedang' => (int) config('alir.kepercayaan.laporan_sedang'),
             'radius_m' => (int) config('alir.kepercayaan.radius_m'),
             'rentang_jam' => (int) config('alir.kepercayaan.rentang_jam'),
-            'foto_menaikkan_ke_sedang' => (bool) config('alir.kepercayaan.foto_menaikkan_ke_sedang', false),
         ];
         $jumlah = $this->jumlahPelaporIndependen($laporan);
         $konfirmasi = $this->konfirmasiTerakhir($laporan);
+        $adaKonfirmasiPositif = $laporan->konfirmasiLapangan->contains(
+            fn (KonfirmasiLapangan $item) => $item->status === 'dijawab' && $item->hasil === 'terkonfirmasi',
+        );
 
-        if ($konfirmasi !== null) {
-            $level = $konfirmasi->hasil === 'sesuai' ? 'tinggi' : 'rendah';
-            $hasil = str_replace('_', ' ', $konfirmasi->hasil ?? 'belum ada hasil');
-            $alasan = ["Konfirmasi lapangan terakhir menyatakan {$hasil}."];
-            $ringkasanKonfirmasi = [
-                'hasil' => $konfirmasi->hasil,
-                'komunitas' => $konfirmasi->komunitasRelawan?->nama,
-                'waktu' => $konfirmasi->dijawab_pada?->toIso8601String(),
-            ];
+        if ($adaKonfirmasiPositif) {
+            $level = 'tinggi';
+            $alasan = ['Ada konfirmasi lapangan terkonfirmasi.'];
         } else {
-            $ringkasanKonfirmasi = null;
             $alasan = ["{$jumlah} pelapor independen dalam {$ambang['radius_m']} m dan ±{$ambang['rentang_jam']} jam."];
             $level = match (true) {
                 $jumlah >= $ambang['laporan_tinggi'] => 'tinggi',
@@ -42,15 +37,19 @@ class KepercayaanLaporanService
                 default => 'rendah',
             };
 
-            $punyaFoto = $laporan->relationLoaded('foto') ? $laporan->foto->isNotEmpty() : $laporan->foto()->exists();
-
-            if ($level === 'rendah' && $ambang['foto_menaikkan_ke_sedang'] && $punyaFoto) {
-                $level = 'sedang';
-                $alasan[] = 'Foto laporan menaikkan tingkat kepercayaan ke sedang.';
-            } elseif ($level === 'rendah') {
+            if ($konfirmasi !== null) {
+                $alasan[] = 'Dibantah lapangan; tingkat tetap berdasarkan laporan independen.';
+            }
+            if ($level === 'rendah') {
                 $alasan[] = "Belum mencapai ambang {$ambang['laporan_sedang']} pelapor independen untuk tingkat sedang.";
             }
         }
+
+        $ringkasanKonfirmasi = $konfirmasi === null ? null : [
+            'hasil' => $konfirmasi->hasil,
+            'komunitas' => $konfirmasi->komunitasRelawan?->nama,
+            'waktu' => $konfirmasi->dijawab_pada?->toIso8601String(),
+        ];
 
         return [
             'level' => $level,
@@ -76,11 +75,6 @@ class KepercayaanLaporanService
         if (! in_array($laporan->status, ['ditolak', 'digabung'], true)) {
             $nomor[] = $laporan->nomor_wa_pelapor;
         }
-
-        $duplikat = $laporan->relationLoaded('duplikat')
-            ? $laporan->duplikat->where('status', '!=', 'ditolak')->pluck('nomor_wa_pelapor')->all()
-            : $laporan->duplikat()->where('status', '!=', 'ditolak')->pluck('nomor_wa_pelapor')->all();
-        $nomor = array_merge($nomor, $duplikat);
 
         return collect($nomor)
             ->map(fn ($value) => $this->normalisasiNomorWa($value))

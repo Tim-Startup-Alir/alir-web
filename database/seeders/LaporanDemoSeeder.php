@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\FotoLaporan;
+use App\Models\KomunitasRelawan;
+use App\Models\KonfirmasiLapangan;
 use App\Models\Wilayah;
 use Database\Factories\LaporanBanjirFactory;
 use Illuminate\Database\Seeder;
@@ -21,7 +23,7 @@ class LaporanDemoSeeder extends Seeder
                 'wilayah_id' => $area->id, 'latitude' => (float) $area->latitude, 'longitude' => (float) $area->longitude,
                 'alamat_singkat' => "Laporan demo {$nama}", 'created_at' => now()->subMinutes(15),
             ]);
-            $jumlah = $nama === 'Tirto' ? 4 : 0;
+            $jumlah = $nama === 'Tirto' ? 4 : ($nama === 'Pasirkratonkramat' ? 1 : 0);
             for ($i = 0; $i < $jumlah; $i++) {
                 $tambahan = LaporanBanjirFactory::new()->dekatDari($pusat, 80 + 25 * $i)->create([
                     'wilayah_id' => $area->id, 'created_at' => now()->subMinutes(30 + $i),
@@ -29,6 +31,17 @@ class LaporanDemoSeeder extends Seeder
                 FotoLaporan::create(['laporan_banjir_id' => $tambahan->id, 'foto_path' => 'demo-foto/demo.jpg', 'urutan' => 1]);
             }
             FotoLaporan::create(['laporan_banjir_id' => $pusat->id, 'foto_path' => 'demo-foto/demo.jpg', 'urutan' => 1]);
+
+            if ($nama === 'Degayu') {
+                KonfirmasiLapangan::create([
+                    'laporan_banjir_id' => $pusat->id,
+                    'komunitas_relawan_id' => KomunitasRelawan::query()->firstOrFail()->id,
+                    'status' => 'dijawab',
+                    'hasil' => 'terkonfirmasi',
+                    'catatan' => 'Konfirmasi contoh untuk demo.',
+                    'dijawab_pada' => now(),
+                ]);
+            }
         }
 
         $tirto = $wilayah['Tirto'];

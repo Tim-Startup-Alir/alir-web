@@ -22,12 +22,10 @@ return [
         'radius_m' => (int) env('ALIR_KLUSTER_RADIUS_M', 500),
         'rentang_jam' => (int) env('ALIR_KLUSTER_RENTANG_JAM', 24),
         // independen = nomor WA pelapor berbeda; laporan yang digabung tetap dihitung untuk induknya
-        // tinggi: konfirmasi lapangan "sesuai" ATAU >= laporan_tinggi pelapor independen
+        // tinggi: konfirmasi lapangan terkonfirmasi ATAU >= laporan_tinggi pelapor independen
         'laporan_tinggi' => (int) env('ALIR_KEPERCAYAAN_LAPORAN_TINGGI', 3),
-        // sedang: >= laporan_sedang pelapor independen; opsi foto dikendalikan flag di bawah.
+        // sedang: >= laporan_sedang pelapor independen.
         'laporan_sedang' => (int) env('ALIR_KEPERCAYAAN_LAPORAN_SEDANG', 2),
-        // F-03 Pemetaan Titik Banjir: foto hanya menaikkan level bila diaktifkan setelah uji coba.
-        'foto_menaikkan_ke_sedang' => (bool) env('ALIR_KEPERCAYAAN_FOTO_SEDANG', false),
     ],
 
     // F-03 Pemetaan Titik Banjir
