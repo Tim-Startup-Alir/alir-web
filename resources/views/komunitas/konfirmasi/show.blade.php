@@ -60,9 +60,8 @@
                 @csrf
                 <fieldset class="konfirmasi-fieldset">
                     <legend>Pilih hasil konfirmasi</legend>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="sesuai" required @checked(old('hasil') === 'sesuai')> <span>Banjir terkonfirmasi</span></label>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_sesuai" required @checked(old('hasil') === 'tidak_sesuai')> <span>Tidak sesuai laporan</span></label>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_ditemukan" required @checked(old('hasil') === 'tidak_ditemukan')> <span>Titik tidak ditemukan</span></label>
+                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="terkonfirmasi" required @checked(old('hasil') === 'terkonfirmasi')> <span>Banjir terkonfirmasi</span></label>
+                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_terkonfirmasi" required @checked(old('hasil') === 'tidak_terkonfirmasi')> <span>Tidak terkonfirmasi</span></label>
                     @error('hasil')<small class="field-error">{{ $message }}</small>@enderror
                 </fieldset>
 
