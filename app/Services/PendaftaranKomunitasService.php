@@ -94,9 +94,11 @@ class PendaftaranKomunitasService
      */
     public function verifikasiEmail(User $user): void
     {
-        if (! $user->hasVerifiedEmail()) {
-            $user->markEmailAsVerified();
+        if ($user->hasVerifiedEmail()) {
+            return;
         }
+
+        $user->markEmailAsVerified();
 
         $komunitas = $user->komunitasRelawan;
         if ($komunitas) {
