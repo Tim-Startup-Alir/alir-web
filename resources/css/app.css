@@ -3,10 +3,46 @@
 @import './animations.css';
 @import './base.css';
 @import './panel.css';
+@import './landing.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
     --font-sans: 'Plus Jakarta Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+
+    /* token ALIR (sama dengan tokens.css) agar bisa dipakai sebagai utility: bg-navy, text-coral, dst. */
+    --color-navy: #0B1E33;
+    --color-navy-2: #12304F;
+    --color-navy-3: #1B4670;
+    --color-coral: #FF6A3D;
+    --color-coral-hover: #FF8A63;
+    --color-coral-dark: #D2481E;
+    --color-coral-ink: #9A2E10;
+    --color-coral-tint: #FFEDE6;
+    --color-alert: #E5484D;
+    --color-alert-ink: #B91C1C;
+    --color-alert-tint: #FDECEC;
+    --color-teal: #14B8A6;
+    --color-teal-ink: #0E6B62;
+    --color-teal-tint: #CCF3EE;
+    --color-amber: #F5A524;
+    --color-amber-ink: #8A5A00;
+    --color-amber-tint: #FFF3D6;
+    --color-water: #569CEB;
+    --color-water-deep: #2F6FBF;
+    --color-water-tint: #E6F0FC;
+    --color-paper: #F5F7FA;
+    --color-s-100: #F1F5F9;
+    --color-s-200: #E2E8F0;
+    --color-s-300: #CBD5E1;
+    --color-s-400: #94A3B8;
+    --color-s-500: #64748B;
+    --color-s-600: #475569;
+
+    --ease-alir: cubic-bezier(.2, .8, .2, 1);
+
+    --animate-alir-up: alirUp .7s both;
+    --animate-alir-fade: alirFade .4s both;
+    --animate-bob: cwFloat 4s ease-in-out infinite;
 }

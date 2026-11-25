@@ -1,0 +1,118 @@
+/* ===== Landing publik ALIR (port dari mockup-alir/assets/css/landing.css + base.css) =====
+   Layout utama ditulis dengan utility Tailwind di Blade; file ini hanya berisi efek, state,
+   dan komponen yang dibangun JS. Semua kelas diberi prefiks ld- agar tidak bentrok dengan panel. */
+
+@keyframes ldTicker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes ldCheck { 0% { transform: scale(.6) } 70% { transform: scale(1.15) } 100% { transform: scale(1) } }
+@keyframes ldShake { 25% { transform: translateX(-6px) } 75% { transform: translateX(6px) } }
+
+@layer components {
+  /* scroll reveal: 28px, .9 dtk, stagger 70 ms (hanya bila JS aktif agar konten tak hilang) */
+  .js [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease), transform .9s var(--ease); transition-delay: calc(var(--i, 0) * 70ms) }
+  .js [data-reveal].in { opacity: 1; transform: none }
+
+  /* navbar */
+  .ld-nav { transition: background .35s var(--ease), box-shadow .35s, padding .35s var(--ease), top .35s var(--ease) }
+  /* !important: harus mengalahkan utility top-3.5 / bg-navy/85 di markup (layer utilities > components) */
+  .ld-nav.is-scrolled { top: 8px !important; background: rgba(11, 30, 51, .94) !important; box-shadow: 0 14px 36px rgba(6, 18, 31, .35) !important }
+  .ld-navlink { flex: none; padding: 8px 10px; border-radius: 99px; font-weight: 700; font-size: 14px; color: #CBD5E1; white-space: nowrap; transition: all .2s }
+  .ld-navlink:hover { color: #fff; background: rgba(86, 156, 235, .18) }
+  .ld-navlink[aria-current="page"] { background: rgba(86, 156, 235, .32); color: #fff; font-weight: 800; box-shadow: inset 0 0 0 1px rgba(160, 205, 255, .4) }
+
+  /* hero */
+  .ld-hero { background: radial-gradient(120% 90% at 85% 0%, #12304D 0%, #0B1E33 55%, #06121F 100%) }
+  .ld-ticker { animation: ldTicker 34s linear infinite }
+  .ld-glass { border-radius: 28px; background: rgba(248, 250, 252, .07); border: 1px solid rgba(248, 250, 252, .12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px) }
+  .ld-fi { width: 100%; display: grid; grid-template-columns: 12px 1fr auto; gap: 14px; align-items: center; padding: 12px 22px; color: #F5F7FA; text-align: left; transition: background .2s, padding .25s var(--ease) }
+  .ld-fi:hover { background: rgba(248, 250, 252, .06); padding-left: 28px }
+
+  /* tombol pill (mengikuti mockup) */
+  .ld-pill { display: inline-flex; align-items: center; justify-content: space-between; gap: 40px; padding: 18px 22px; border-radius: 99px; font-weight: 800; font-size: 17px; transition: transform .3s var(--ease), background .25s, color .25s }
+  .ld-pill .arr, .ld-btn-dark .arr { transition: transform .3s var(--ease) }
+  .ld-pill:hover .arr, .ld-btn-dark:hover .arr { transform: translateX(5px) }
+  .ld-pill--coral { background: var(--coral); color: var(--navy) }
+  .ld-pill--coral:hover { transform: scale(1.05); background: var(--coral-hover) }
+  .ld-pill--line { border: 2px solid rgba(248, 250, 252, .5); color: #F5F7FA; padding: 16px 22px }
+  .ld-pill--line:hover { background: #F5F7FA; color: var(--navy); transform: scale(1.05) }
+  .ld-pill--navy { background: var(--navy); color: var(--coral) }
+  .ld-pill--navy:hover { transform: scale(1.04) }
+  .ld-btn-dark { display: inline-flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 99px; background: var(--navy); color: #F5F7FA; font-weight: 800; font-size: 15px; transition: transform .3s var(--ease), background .25s }
+  .ld-btn-dark:hover { transform: scale(1.04); background: var(--navy-2) }
+
+
+  /* kartu */
+  .ld-card-lift { transition: transform .35s var(--ease), box-shadow .35s }
+  .ld-card-lift:hover { transform: translateY(-5px); box-shadow: 0 22px 50px rgba(11, 30, 51, .14) }
+  /* footer */
+  .ld-foot-col a { color: #CBD5E1; transition: color .2s, transform .2s; display: inline-block }
+  .ld-foot-col a:hover { color: #fff; transform: translateX(3px) }
+
+  /* ===== overlay: satu sistem untuk semua popup (z-index publik 2000) ===== */
+  body.modal-open { overflow: hidden }
+  [id] { scroll-margin-top: 90px }
+  .ld-ov { position: fixed; inset: 0; z-index: 2000; background: rgba(11, 30, 51, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; animation: alirFade .25s both }
+  .ld-ov.is-closing { animation: alirFade .2s reverse both }
+  .ld-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; background: #fff; border-radius: 28px; box-shadow: 0 24px 64px rgba(11, 30, 51, .35); animation: alirUp .35s both }
+  .ld-modal.lapor { width: min(720px, 100%); border: 1.5px solid #E2E8F0; display: flex; flex-direction: column; overflow: hidden }
+  .ld-toast { position: fixed; z-index: 3000; right: 20px; bottom: 20px; max-width: min(420px, calc(100vw - 40px)); display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #0B1E33; color: #F5F7FA; font-size: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; box-shadow: 0 16px 40px rgba(11, 30, 51, .35); border-radius: 18px; animation: alirUp .3s both }
+  .ld-toast .ti { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: #0B1E33; border-radius: 50% }
+
+  /* modal Lapor Banjir (F-02) */
+  .lp-h { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--s-200); background: var(--coral); color: var(--navy); flex: none }
+  .lp-x { width: 36px; height: 36px; border: 1.5px solid rgba(11, 30, 51, .25); display: grid; place-items: center; border-radius: 50%; color: var(--navy); transition: all .2s }
+  .lp-x:hover { background: var(--navy); color: var(--coral) }
+  .lp-steps { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--s-200); flex: none }
+  .lp-steps > div { padding: 12px 14px; border-right: 1px solid var(--s-200); background: #fff; color: var(--s-500); transition: all .3s }
+  .lp-steps > div:last-child { border-right: 0 }
+  .lp-steps .on { background: var(--navy); color: #fff }
+  .lp-steps .done { background: var(--teal-tint); color: var(--teal-ink) }
+  .lp-steps small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em }
+  .lp-steps b { font-size: 13px }
+  .lp-body { padding: 20px; overflow: auto; flex: 1; min-height: 0 }
+  .lp-in { animation: alirUp .35s both }
+  .lp-f { display: flex; justify-content: space-between; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--s-200); flex: none; background: #fff }
+  .lp-next { display: flex; align-items: center; justify-content: space-between; gap: 28px; min-width: 200px; padding: 12px 16px; border: 1.5px solid #E2E8F0; background: var(--navy); color: #fff; font-weight: 800; border-radius: 99px; transition: all .25s }
+  .lp-next:hover { background: var(--coral-dark); border-color: var(--coral-dark) }
+  .lp-next[disabled] { opacity: .6; pointer-events: none }
+  .lp-err { margin-top: 14px; padding: 10px 12px; background: #FEE2E2; color: #991B1B; font-size: 13px; font-weight: 700; display: flex; gap: 8px; align-items: center; border-radius: 12px; animation: ldShake .35s both }
+  .lp-ok { margin-top: 12px; display: flex; gap: 10px; align-items: center; font-size: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--s-200); background: var(--paper, #F5F7FA) }
+  .lp-field { display: flex; border: 2px solid var(--s-200); border-radius: 14px; overflow: hidden; background: #fff; transition: border-color .2s, box-shadow .2s }
+  .lp-field:focus-within { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
+  .lp-field.ok { border-color: var(--teal) }
+  .lp-field.bad { border-color: var(--red) }
+  .lp-field > span { padding: 12px 14px; background: var(--s-100); font-weight: 800; border-right: 1px solid var(--s-200); display: flex; gap: 6px; align-items: center; font-size: 14px }
+  .lp-field input, .lp-field textarea { flex: 1; min-width: 0; border: 0; padding: 12px 14px; font-size: 15px; font-weight: 500; outline: none; background: #fff; resize: none }
+  .sev-o { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 2px solid var(--s-200); background: #fff; text-align: left; color: var(--navy); border-radius: 16px; transition: all .25s }
+  .sev-o:hover { transform: translateY(-2px) }
+  .sev-o.on { background: var(--paper, #F5F7FA) }
+  .lp-drop { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; border: 2px dashed var(--navy); background: #F5F7FA; cursor: pointer; transition: background .25s; border-radius: 20px }
+  .lp-drop:hover, .lp-drop.drag { background: #FFF4EF }
+  .lp-stp { display: flex; align-items: center; border: 1.5px solid var(--s-200); border-radius: 14px; overflow: hidden; width: max-content }
+  .lp-stp button { width: 42px; height: 42px; background: #fff; display: grid; place-items: center }
+  .lp-stp button:hover { background: var(--s-100) }
+  .lp-stp span { min-width: 64px; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums }
+  .lp-ferr { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--alert-ink, #B91C1C) }
+  .lp-ok.bad { border-color: #FCA5A5; background: #FEF2F2; color: #991B1B }
+  .lp-drop.bad { border-color: var(--red, #E5484D); background: #FEF2F2 }
+  .lp-stp input { width: 72px; height: 42px; border: 0; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; appearance: textfield }
+  .lp-stp input::-webkit-outer-spin-button, .lp-stp input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0 }
+  .lp-ts { min-height: 65px; display: flex; align-items: center }
+  .ld-cov-label { background: transparent !important; border: 0 !important; box-shadow: none !important; font-size: 11px; font-weight: 800; color: #9A2E10; font-family: var(--font) }
+  .ld-cov-label::before { display: none }
+  .ld-check { animation: ldCheck .45s var(--ease) both }
+  .map-fallback { position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(11, 30, 51, .06) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(11, 30, 51, .06) 39px 40px), #e7edf3 }
+  .leaflet-container { font-family: var(--font) }
+  @media (max-width: 560px) {
+    .lp-steps small { display: none }
+    .lp-steps > div { padding: 10px 8px }
+    .lp-next { min-width: 0 }
+  }
+
+  /* hormati prefers-reduced-motion (mockup tidak; ini peningkatan) */
+  @media (prefers-reduced-motion: reduce) {
+    .ld-ticker, .live-dot, .bob, .hw .l svg { animation: none !important }
+    .js [data-reveal] { opacity: 1; transform: none; transition: none }
+    .hw { transition: none !important }
+    html { scroll-behavior: auto }
+  }
+}

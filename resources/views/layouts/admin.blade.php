@@ -31,14 +31,25 @@
             <i data-lucide="layout-dashboard"></i>Ringkasan
         </a>
 
-        {{-- F-03 Pemetaan Titik Banjir --}}
-        <div class="ng {{ request()->routeIs('admin.peta-laporan.*') ? 'open has-on' : '' }}">
-            <button type="button" class="ng-h" aria-expanded="{{ request()->routeIs('admin.peta-laporan.*') ? 'true' : 'false' }}">
+        {{-- F-02 Pelaporan Banjir & F-03 Pemetaan Titik Banjir --}}
+        @php
+            $laporanActive = request()->routeIs('admin.peta-laporan.*', 'admin.laporan.cari');
+            $laporanBaruBelumDibaca = auth()->user()->unreadNotifications()
+                ->where('type', \App\Notifications\LaporanBaruAdminNotification::class)->count();
+        @endphp
+        <div class="ng {{ $laporanActive ? 'open has-on' : '' }}">
+            <button type="button" class="ng-h" aria-expanded="{{ $laporanActive ? 'true' : 'false' }}">
                 <i data-lucide="map-pinned"></i><span>Laporan</span><i data-lucide="chevron-down" class="chev"></i>
             </button>
             <div class="ng-b"><div>
                 <a href="{{ route('admin.peta-laporan.index') }}" class="{{ request()->routeIs('admin.peta-laporan.*') ? 'on' : '' }}">
                     <i data-lucide="map"></i>Peta Laporan
+                </a>
+                <a href="{{ route('admin.laporan.cari') }}" class="{{ request()->routeIs('admin.laporan.cari') ? 'on' : '' }}" dusk="menu-cari-laporan">
+                    <i data-lucide="search"></i>Cari Kode Laporan
+                    @if ($laporanBaruBelumDibaca > 0)
+                        <span class="badge">{{ $laporanBaruBelumDibaca }}</span>
+                    @endif
                 </a>
             </div></div>
         </div>

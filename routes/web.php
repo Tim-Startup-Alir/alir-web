@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CariLaporanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
@@ -14,12 +15,21 @@ use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
+use App\Http\Controllers\LaporanBanjirController;
 use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Halaman publik. Beranda + modal Lapor Banjir = F-02 (PBI-004/005/006);
+// Cuaca, Donasi, Edukasi masih placeholder untuk diisi pemilik fitur masing-masing.
+Route::view('/', 'landing.index')->name('landing');
+Route::view('/cuaca', 'publik.placeholder', ['judul' => 'Cuaca & Peringatan', 'kicker' => 'CUACA', 'ikon' => 'cloud-sun'])->name('cuaca');
+Route::view('/donasi', 'publik.placeholder', ['judul' => 'Donasi & Transparansi', 'kicker' => 'DONASI', 'ikon' => 'heart-handshake'])->name('donasi');
+Route::view('/edukasi', 'publik.placeholder', ['judul' => 'Edukasi Siaga Banjir', 'kicker' => 'EDUKASI', 'ikon' => 'book-open'])->name('edukasi');
+
+// F-02 Pelaporan Banjir publik tanpa login (NFR-02: CAPTCHA + rate limit)
+Route::post('/lapor', [LaporanBanjirController::class, 'store'])->middleware('throttle:lapor-banjir')->name('lapor.store');
+Route::post('/lapor/cek-lokasi', [LaporanBanjirController::class, 'cekLokasi'])->middleware('throttle:cek-lokasi')->name('lapor.cek-lokasi');
+Route::get('/lapor/diterima', [LaporanBanjirController::class, 'diterima'])->name('lapor.diterima');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -74,7 +84,7 @@ Route::prefix('admin')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        // F-03 Pemetaan Titik Banjir
+        Route::get('laporan/cari', CariLaporanController::class)->name('laporan.cari');
         Route::get('peta-laporan', [PetaLaporanController::class, 'index'])->name('peta-laporan.index');
         Route::get('peta-laporan/data', [PetaLaporanController::class, 'data'])->middleware('throttle:60,1')->name('peta-laporan.data');
         Route::get('peta-laporan/{laporan}/sekitar', [PetaLaporanController::class, 'sekitar'])->middleware('throttle:60,1')->name('peta-laporan.sekitar');
@@ -108,7 +118,6 @@ Route::prefix('komunitas')
     ->group(function () {
         Route::get('/', [KomunitasDashboardController::class, 'index'])->name('dashboard');
 
-        // F-03 Pemetaan Titik Banjir
         Route::get('konfirmasi-lapangan', [KomunitasKonfirmasiLapanganController::class, 'index'])->name('konfirmasi.index');
         Route::get('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'show'])->name('konfirmasi.show');
         Route::post('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'store'])
