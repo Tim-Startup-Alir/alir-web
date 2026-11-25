@@ -38,11 +38,15 @@ test('community can submit private field proof and admin sees refreshed confiden
     $admin = User::where('email', 'admin@alir.test')->firstOrFail();
     $temporaryPng = sys_get_temp_dir().DIRECTORY_SEPARATOR.'alir-konfirmasi-'.bin2hex(random_bytes(6)).'.png';
     file_put_contents($temporaryPng, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/ic0AAAAASUVORK5CYII='));
+    $temporaryGif = sys_get_temp_dir().DIRECTORY_SEPARATOR.'alir-konfirmasi-'.bin2hex(random_bytes(6)).'.gif';
+    file_put_contents($temporaryGif, base64_decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+    $temporaryLargePng = sys_get_temp_dir().DIRECTORY_SEPARATOR.'alir-konfirmasi-'.bin2hex(random_bytes(6)).'.png';
+    file_put_contents($temporaryLargePng, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/ic0AAAAASUVORK5CYII=').str_repeat("\0", 5 * 1024 * 1024 + 1));
 
     try {
         /** @var DuskTestCase $dusk */
         $dusk = $this;
-        $dusk->browse(function (Browser $browser) use ($komunitas, $admin, $laporan, $laporanJauh, $temporaryPng) {
+        $dusk->browse(function (Browser $browser) use ($komunitas, $admin, $laporan, $laporanJauh, $temporaryPng, $temporaryGif, $temporaryLargePng) {
             $browser->loginAs($komunitas->user)
                 ->visit(route('komunitas.konfirmasi.show', $laporanJauh))
                 ->assertSee('403')
@@ -53,12 +57,22 @@ test('community can submit private field proof and admin sees refreshed confiden
                 ->waitFor('@form-konfirmasi')
                 ->assertSee('Foto bukti');
 
-            $browser->radio('hasil', 'sesuai')->type('catatan', 'Kondisi terpantau aman untuk dicatat.')
+            $browser->radio('hasil', 'terkonfirmasi')->type('catatan', 'Kondisi terpantau aman untuk dicatat.')
                 ->script("document.querySelector('#foto-bukti').removeAttribute('required');");
             $browser->click('@submit-konfirmasi')
                 ->acceptDialog()
                 ->waitForText('Foto bukti wajib diunggah.')
                 ->assertInputValue('catatan', 'Kondisi terpantau aman untuk dicatat.')
+                ->script("const input=document.querySelector('#foto-bukti'); const clone=input.cloneNode(true); input.replaceWith(clone); clone.removeAttribute('required');");
+            $browser->attach('foto', $temporaryGif)
+                ->click('@submit-konfirmasi')->acceptDialog()
+                ->waitForText('Format foto harus JPG, JPEG, atau PNG.');
+            $browser->script("const input=document.querySelector('#foto-bukti'); const clone=input.cloneNode(true); input.replaceWith(clone); clone.removeAttribute('required');");
+            $browser->attach('foto', $temporaryLargePng)
+                ->click('@submit-konfirmasi')->acceptDialog()
+                ->waitForText('Ukuran foto maksimal 5120 KB.');
+            $browser->script("const input=document.querySelector('#foto-bukti'); const clone=input.cloneNode(true); input.replaceWith(clone); clone.removeAttribute('required');");
+            $browser->radio('hasil', 'terkonfirmasi')
                 ->attach('foto', $temporaryPng)
                 ->click('@submit-konfirmasi')
                 ->acceptDialog()
@@ -70,7 +84,7 @@ test('community can submit private field proof and admin sees refreshed confiden
             $browser->loginAs($admin)
                 ->visit(route('admin.peta-laporan.index', ['laporan' => $laporan->id]))
                 ->waitForText('Konfirmasi lapangan', 20)
-                ->assertSee('sesuai')
+                ->assertSee('terkonfirmasi')
                 ->assertSee($komunitas->nama)
                 ->assertSee('Tinggi')
                 ->assertDontSee('Data Rahasia Pelapor')
@@ -79,6 +93,12 @@ test('community can submit private field proof and admin sees refreshed confiden
     } finally {
         if (is_file($temporaryPng)) {
             unlink($temporaryPng);
+        }
+        if (is_file($temporaryGif)) {
+            unlink($temporaryGif);
+        }
+        if (is_file($temporaryLargePng)) {
+            unlink($temporaryLargePng);
         }
     }
 

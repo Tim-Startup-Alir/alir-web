@@ -43,6 +43,26 @@ test('admin pages and json routes enforce role and validate input', function () 
     $this->getJson(route('admin.peta-laporan.data', ['south' => -6.8, 'west' => 109.6, 'north' => -6.9, 'east' => 109.7]))->assertUnprocessable();
 });
 
+test('confidence rules explain levels with current config values in plain language', function () {
+    config([
+        'alir.kepercayaan.radius_m' => 725,
+        'alir.kepercayaan.rentang_jam' => 18,
+        'alir.kepercayaan.laporan_tinggi' => 4,
+        'alir.kepercayaan.laporan_sedang' => 3,
+    ]);
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+
+    $this->actingAs($admin)->get(route('admin.peta-laporan.index'))->assertOk()
+        ->assertSee('radius 725 m dan dalam 18 jam sebelum atau sesudah laporan ini')
+        ->assertSee('4 pelapor berbeda atau lebih')
+        ->assertSee('3 pelapor berbeda')
+        ->assertSee('Pelapor berbeda = nomor WhatsApp berbeda')
+        ->assertSee('Rendah')
+        ->assertSee('Dibantah lapangan')
+        ->assertDontSee('.env')
+        ->assertDontSee('Haversine');
+});
+
 test('marker query filters bbox and reports truncation', function () {
     $inside = petaLaporan(-6.892, 109.652);
     petaLaporan(-6.7, 109.8);

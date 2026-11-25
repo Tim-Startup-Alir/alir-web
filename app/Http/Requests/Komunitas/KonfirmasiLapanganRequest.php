@@ -19,7 +19,7 @@ class KonfirmasiLapanganRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'hasil' => ['required', 'string', Rule::in(['sesuai', 'tidak_sesuai', 'tidak_ditemukan'])],
+            'hasil' => ['required', 'string', Rule::in(['terkonfirmasi', 'tidak_terkonfirmasi'])],
             'foto' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:'.(int) config('alir.konfirmasi.foto_maks_kb', 5120)],
             'catatan' => ['nullable', 'string', 'max:500'],
         ];

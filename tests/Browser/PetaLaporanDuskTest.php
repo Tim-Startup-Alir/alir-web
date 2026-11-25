@@ -45,7 +45,7 @@ test('pbi-007 dusk map shows report detail, nearby list, filters and escaped add
             ->assertPresent('img.peta-photo');
         expect((int) ($browser->script('return document.querySelectorAll(".peta-item").length;')[0] ?? -1))->toBe(1);
         expect((string) ($browser->script('return document.querySelector(".peta-item")?.dataset.laporanId;')[0] ?? ''))->toBe((string) $valid->id);
-        $browser->script("const filter = document.querySelector('#filter-status'); [...filter.options].forEach(option => option.selected = option.value === 'ditolak'); filter.dispatchEvent(new Event('change')); ");
+        $browser->script('const input = document.querySelector("#filter-status input[value=ditolak]"); input.checked = true; input.dispatchEvent(new Event("change", {bubbles:true}));');
         $browser->waitForText('Tidak ada laporan pada area peta ini.', 15)->assertPresent('img.peta-photo');
         expect((int) ($browser->script('return document.querySelectorAll(".peta-item").length;')[0] ?? -1))->toBe(0);
     });

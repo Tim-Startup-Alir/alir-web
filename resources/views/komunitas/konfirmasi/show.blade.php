@@ -20,7 +20,7 @@
     <div class="konfirmasi-detail-grid">
         <section class="card konfirmasi-report" aria-labelledby="report-title">
             <span class="kicker">{{ $laporan->kode_pelacakan }}</span>
-            <h3 id="report-title">{{ $laporan->alamat_singkat }}</h3>
+            <h3 id="report-title">{{ preg_replace('/^Laporan demo\s+/i', 'Laporan ', $laporan->alamat_singkat) }}</h3>
             <dl class="konfirmasi-dl">
                 <dt>Wilayah</dt><dd>{{ $laporan->wilayah?->nama_kelurahan ?? 'Tidak tersedia' }}</dd>
                 <dt>Tingkat dampak</dt><dd>{{ ucfirst($laporan->severity) }}</dd>
@@ -44,7 +44,7 @@
         </section>
 
         <section class="card konfirmasi-map-card" aria-labelledby="map-title">
-            <h3 id="map-title">Lokasi laporan dan posko</h3>
+            <h3 id="map-title">Peta lokasi laporan dan posko</h3>
             <div id="konfirmasi-map" class="konfirmasi-map" role="application" aria-label="Peta lokasi laporan dan posko komunitas" tabindex="0" dusk="konfirmasi-map"
                 data-report-lat="{{ $laporan->latitude }}" data-report-lng="{{ $laporan->longitude }}">
                 @foreach ($posko as $item)
@@ -60,16 +60,18 @@
                 @csrf
                 <fieldset class="konfirmasi-fieldset">
                     <legend>Pilih hasil konfirmasi</legend>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="sesuai" required @checked(old('hasil') === 'sesuai')> <span>Banjir terkonfirmasi</span></label>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_sesuai" required @checked(old('hasil') === 'tidak_sesuai')> <span>Tidak sesuai laporan</span></label>
-                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_ditemukan" required @checked(old('hasil') === 'tidak_ditemukan')> <span>Titik tidak ditemukan</span></label>
+                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="terkonfirmasi" required @checked(old('hasil') === 'terkonfirmasi')> <span>Banjir terkonfirmasi</span></label>
+                    <label class="konfirmasi-choice"><input type="radio" name="hasil" value="tidak_terkonfirmasi" required @checked(old('hasil') === 'tidak_terkonfirmasi')> <span>Tidak terkonfirmasi</span></label>
                     @error('hasil')<small class="field-error">{{ $message }}</small>@enderror
                 </fieldset>
 
                 <div class="fld">
-                    <label for="foto-bukti">Foto bukti <span aria-hidden="true">(wajib)</span></label>
-                    <input class="input" id="foto-bukti" name="foto" type="file" accept="image/jpeg,image/png" required aria-describedby="foto-help foto-error" dusk="konfirmasi-foto">
-                    <small id="foto-help" class="muted">JPG, JPEG, atau PNG. Maksimal {{ number_format($radiusFotoKb, 0, ',', '.') }} KB.</small>
+                    <label for="foto-bukti">Foto bukti wajib diunggah</label>
+                    <input class="konfirmasi-file-input" id="foto-bukti" name="foto" type="file" accept="image/jpeg,image/png" required aria-describedby="foto-help foto-error" dusk="konfirmasi-foto">
+                    <label class="konfirmasi-upload" for="foto-bukti"><i data-lucide="plus" aria-hidden="true"></i><span id="foto-upload-label">Tambah foto bukti</span></label>
+                    <small id="foto-filename" class="muted" aria-live="polite">Belum ada foto dipilih.</small>
+                    <button class="btn btn-ghost konfirmasi-cancel-upload" id="foto-cancel" type="button" hidden>Batal pilih foto</button>
+                    <small id="foto-help" class="muted">Format JPG, JPEG, atau PNG. Maksimal {{ number_format($radiusFotoKb, 0, ',', '.') }} KB.</small>
                     @error('foto')<small id="foto-error" class="field-error">{{ $message }}</small>@enderror
                     <img id="foto-preview" class="konfirmasi-preview" alt="Pratinjau foto bukti" hidden>
                 </div>
@@ -90,7 +92,7 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-.konfirmasi-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.konfirmasi-report,.konfirmasi-map-card,.konfirmasi-form-card{padding:clamp(14px,2vw,22px);min-width:0}.konfirmasi-report h3,.konfirmasi-map-card h3,.konfirmasi-form-card h3{margin:8px 0 16px}.konfirmasi-dl{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:8px 12px}.konfirmasi-dl dt{color:var(--s-500)}.konfirmasi-dl dd{margin:0;font-weight:600;overflow-wrap:anywhere}.konfirmasi-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}.konfirmasi-photos img{width:100%;height:100px;object-fit:cover;border:1px solid var(--s-200);border-radius:var(--r-sm)}.konfirmasi-map{height:340px;min-height:260px;border:1px solid var(--s-200);border-radius:var(--r-md);z-index:0}.konfirmasi-form-card{grid-column:1/-1}.konfirmasi-fieldset{display:grid;gap:10px;border:0;padding:0;margin:0 0 18px}.konfirmasi-fieldset legend{font-weight:700;margin-bottom:8px}.konfirmasi-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--s-200);border-radius:var(--r-sm);cursor:pointer}.konfirmasi-choice:focus-within,.konfirmasi-choice:has(input:focus-visible){outline:2px solid var(--water);outline-offset:2px}.konfirmasi-choice input{margin-top:3px;accent-color:var(--water)}.konfirmasi-form-card .fld{display:grid;gap:6px;margin:14px 0}.konfirmasi-form-card textarea{resize:vertical}.konfirmasi-preview{max-width:min(100%,360px);max-height:260px;object-fit:contain;border-radius:var(--r-sm);border:1px solid var(--s-200)}.konfirmasi-errors{padding:14px;margin-bottom:16px;color:var(--red-ink)}.field-error{display:block;color:var(--red-ink)}#submit-konfirmasi:disabled{opacity:.65;cursor:wait}
+.konfirmasi-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.konfirmasi-report,.konfirmasi-map-card,.konfirmasi-form-card{padding:clamp(14px,2vw,22px);min-width:0}.konfirmasi-report h3,.konfirmasi-map-card h3,.konfirmasi-form-card h3{margin:8px 0 16px}.konfirmasi-dl{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:8px 12px;margin:0 0 20px}.konfirmasi-dl dt{color:var(--s-500)}.konfirmasi-dl dd{margin:0;font-weight:600;overflow-wrap:anywhere}.konfirmasi-report h4{margin:20px 0 10px}.konfirmasi-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}.konfirmasi-photos img{width:100%;height:100px;object-fit:cover;border:1px solid var(--s-200);border-radius:var(--r-sm)}.konfirmasi-map{height:340px;min-height:260px;border:1px solid var(--s-200);border-radius:var(--r-md);z-index:0}.konfirmasi-form-card{grid-column:1/-1}.konfirmasi-fieldset{display:grid;gap:10px;border:0;padding:0;margin:0 0 18px}.konfirmasi-fieldset legend{font-weight:700;margin-bottom:8px}.konfirmasi-choice{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--s-200);border-radius:var(--r-sm);cursor:pointer}.konfirmasi-choice:focus-within,.konfirmasi-choice:has(input:focus-visible){outline:2px solid var(--water);outline-offset:2px}.konfirmasi-choice input{margin-top:3px;accent-color:var(--water)}.konfirmasi-form-card .fld{display:grid;gap:6px;margin:14px 0}.konfirmasi-form-card textarea{resize:vertical}.konfirmasi-file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%);border:0}.konfirmasi-file-input:focus-visible+.konfirmasi-upload{outline:2px solid var(--water);outline-offset:2px}.konfirmasi-upload{display:inline-flex;align-items:center;gap:8px;width:max-content;max-width:100%;padding:10px 14px;border:1px solid var(--s-200);border-radius:var(--r-sm);font-weight:700;cursor:pointer}.konfirmasi-upload:hover{background:var(--s-50)}.konfirmasi-upload svg{width:18px;height:18px}.konfirmasi-cancel-upload{width:max-content;background:var(--red-tint);color:var(--red-ink);border-color:rgba(229,72,77,.35)}.konfirmasi-cancel-upload:hover{background:var(--red);color:#fff;border-color:var(--red)}.konfirmasi-cancel-upload[hidden]{display:none}.konfirmasi-preview{max-width:min(100%,360px);max-height:260px;object-fit:contain;border-radius:var(--r-sm);border:1px solid var(--s-200)}.konfirmasi-errors{padding:14px;margin-bottom:16px;color:var(--red-ink)}.field-error{display:block;color:var(--red-ink)}#submit-konfirmasi:disabled{opacity:.65;cursor:wait}
 @media(max-width:700px){.konfirmasi-detail-grid{grid-template-columns:1fr}.konfirmasi-form-card{grid-column:auto}.konfirmasi-map{height:300px}.konfirmasi-dl{grid-template-columns:1fr;gap:3px}.konfirmasi-dl dd{margin-bottom:8px}}
 </style>
 @endpush
@@ -121,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const form = document.getElementById('form-konfirmasi');
     const file = document.getElementById('foto-bukti');
+    const fileName = document.getElementById('foto-filename');
+    const uploadLabel = document.getElementById('foto-upload-label');
+    const cancelFile = document.getElementById('foto-cancel');
     const preview = document.getElementById('foto-preview');
     const state = document.getElementById('form-state');
     const submit = document.getElementById('submit-konfirmasi');
@@ -131,16 +136,39 @@ document.addEventListener('DOMContentLoaded', () => {
         previewUrl = null;
         preview.hidden = true;
         const selected = file.files?.[0];
-        if (!selected) return;
+        if (!selected) {
+            fileName.textContent = 'Belum ada foto dipilih.';
+            uploadLabel.textContent = 'Tambah foto bukti';
+            cancelFile.hidden = true;
+            return;
+        }
         if (!['image/jpeg', 'image/png'].includes(selected.type) || selected.size > maxBytes) {
             state.textContent = selected.size > maxBytes ? 'Ukuran foto melebihi batas.' : 'Pilih foto JPG, JPEG, atau PNG.';
             file.value = '';
+            fileName.textContent = 'Belum ada foto dipilih.';
+            uploadLabel.textContent = 'Tambah foto bukti';
+            cancelFile.hidden = true;
             return;
         }
+        fileName.textContent = selected.name;
+        uploadLabel.textContent = 'Ganti foto bukti';
+        cancelFile.hidden = false;
         previewUrl = URL.createObjectURL(selected);
         preview.src = previewUrl;
         preview.hidden = false;
         state.textContent = 'Pratinjau foto siap.';
+    });
+    cancelFile?.addEventListener('click', () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = null;
+        file.value = '';
+        preview.removeAttribute('src');
+        preview.hidden = true;
+        fileName.textContent = 'Belum ada foto dipilih.';
+        uploadLabel.textContent = 'Tambah foto bukti';
+        cancelFile.hidden = true;
+        state.textContent = 'Pilihan foto dibatalkan. Tambahkan foto bukti sebelum mengirim.';
+        file.focus();
     });
     form?.addEventListener('submit', event => {
         if (!window.confirm('Kirim hasil konfirmasi dan foto bukti ini?')) {

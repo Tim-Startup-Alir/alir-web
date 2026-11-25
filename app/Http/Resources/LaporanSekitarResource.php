@@ -14,7 +14,7 @@ class LaporanSekitarResource extends JsonResource
 
         return [
             'id' => $this->id, 'kode' => $this->kode_pelacakan, 'alamat_singkat' => $this->alamat_singkat,
-            'wilayah' => $this->wilayah?->nama_kelurahan, 'lat' => (float) $this->latitude, 'lng' => (float) $this->longitude,
+            'wilayah_id' => $this->wilayah_id, 'wilayah' => $this->wilayah?->nama_kelurahan, 'lat' => (float) $this->latitude, 'lng' => (float) $this->longitude,
             'severity' => $this->severity, 'jumlah_warga' => $this->jumlah_warga, 'status' => $this->status,
             'tingkat_kepercayaan' => $analisis['level'], 'catatan' => $this->catatan,
             'dibuat_pada' => $this->created_at?->toIso8601String(),

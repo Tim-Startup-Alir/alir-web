@@ -20,7 +20,7 @@ class KonfirmasiLapanganService
 {
     private const STATUS_LAPORAN = ['menunggu_verifikasi', 'terverifikasi', 'ditugaskan', 'ditangani'];
 
-    private const HASIL = ['sesuai', 'tidak_sesuai', 'tidak_ditemukan'];
+    private const HASIL = ['terkonfirmasi', 'tidak_terkonfirmasi'];
 
     public function __construct(private readonly KepercayaanLaporanService $kepercayaan) {}
 
