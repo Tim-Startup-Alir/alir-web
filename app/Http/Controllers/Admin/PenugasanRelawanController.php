@@ -19,8 +19,6 @@ use Throwable;
 
 class PenugasanRelawanController extends Controller
 {
-    private const KODE_DEMO_F05 = 'DEMO-F05-%';
-
     public function index(
         Request $request,
         RekomendasiPenugasanService $rekomendasi
@@ -41,7 +39,6 @@ class PenugasanRelawanController extends Controller
         $taskView = $validated['view'] ?? 'table';
 
         $laporanDasar = LaporanBanjir::query()
-            ->where('kode_pelacakan', 'not like', self::KODE_DEMO_F05)
             ->whereIn('status', ['terverifikasi', 'ditugaskan']);
         $penugasanAktif = fn ($query) => $query->whereIn('stage', Penugasan::STAGE_AKTIF);
         $belumDitugaskan = (clone $laporanDasar)
@@ -89,7 +86,6 @@ class PenugasanRelawanController extends Controller
         );
         $daftarTugas = Penugasan::query()
             ->with(['laporanBanjir.wilayah', 'komunitasRelawan'])
-            ->whereHas('laporanBanjir', fn ($q) => $q->where('kode_pelacakan', 'not like', self::KODE_DEMO_F05))
             ->when($villageFilter, fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('wilayah_id', $villageFilter)))
             ->when($severityFilter !== 'semua', fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('severity', $severityFilter)))
             ->when($confidenceFilter !== 'semua', fn ($q) => $q->whereHas('laporanBanjir', fn ($q2) => $q2->where('tingkat_kepercayaan', $confidenceFilter)))

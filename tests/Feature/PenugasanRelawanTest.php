@@ -197,7 +197,7 @@ test('admin page shows actual reports and assignment status tabs', function () {
         ->and($cardResponse->viewData('daftarTugas')->total())->toBe(1);
 });
 
-test('admin assignment page excludes Demo F-05 reports without deleting their assignments', function () {
+test('admin assignment page displays Demo F-05 reports and assignments', function () {
     $laporanDemo = laporanUntukPenugasan();
     $laporanDemo->update(['kode_pelacakan' => 'DEMO-F05-PKR-H03']);
     $laporanAktual = laporanUntukPenugasan();
@@ -222,13 +222,13 @@ test('admin assignment page excludes Demo F-05 reports without deleting their as
     $response = $this->actingAs($admin)
         ->get(route('admin.penugasan.index', ['status' => 'sudah_ditugaskan']))
         ->assertOk()
-        ->assertDontSee('DEMO-F05-PKR-H03')
+        ->assertSee('DEMO-F05-PKR-H03')
         ->assertSee('P-'.$laporanAktual->kode_pelacakan, false);
 
-    expect($response->viewData('daftarTugas')->total())->toBe(1)
+    expect($response->viewData('daftarTugas')->total())->toBe(2)
         ->and(Penugasan::whereKey($penugasanDemo->id)->exists())->toBeTrue()
         ->and(Penugasan::whereKey($penugasanAktual->id)->exists())->toBeTrue()
-        ->and($response->viewData('jumlahLaporan')['semua'])->toBe(1);
+        ->and($response->viewData('jumlahLaporan')['semua'])->toBe(2);
 });
 
 test('admin can assign an eligible community and the in-app notification is persisted', function () {
