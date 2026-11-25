@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Table('penugasan')]
 #[Fillable([
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Penugasan extends Model
 {
+    use SoftDeletes;
     public const STAGE = ['menunggu', 'diterima', 'ditolak', 'menuju_lokasi', 'ditangani', 'selesai', 'dibatalkan'];
 
     /**

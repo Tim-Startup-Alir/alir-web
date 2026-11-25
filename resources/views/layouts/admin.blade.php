@@ -31,14 +31,18 @@
             <i data-lucide="layout-dashboard"></i>Ringkasan
         </a>
 
-        {{-- F-02 Pelaporan Banjir & F-03 Pemetaan Titik Banjir --}}
+        {{-- F-02 Pelaporan Banjir, F-03 Pemetaan Titik Banjir & F-05 Penugasan Relawan --}}
         @php
-            $laporanActive = request()->routeIs('admin.peta-laporan.*', 'admin.laporan.cari');
+            $laporanMenuActive = request()->routeIs('admin.peta-laporan.*', 'admin.laporan.cari', 'admin.penugasan.*');
             $laporanBaruBelumDibaca = auth()->user()->unreadNotifications()
                 ->where('type', \App\Notifications\LaporanBaruAdminNotification::class)->count();
+            $jumlahBelumDitugaskan = \App\Models\LaporanBanjir::query()
+                ->where('status', 'terverifikasi')
+                ->whereDoesntHave('penugasan', fn ($query) => $query->whereIn('stage', \App\Models\Penugasan::STAGE_AKTIF))
+                ->count();
         @endphp
-        <div class="ng {{ $laporanActive ? 'open has-on' : '' }}">
-            <button type="button" class="ng-h" aria-expanded="{{ $laporanActive ? 'true' : 'false' }}">
+        <div class="ng {{ $laporanMenuActive ? 'open has-on' : '' }}">
+            <button type="button" class="ng-h" aria-expanded="{{ $laporanMenuActive ? 'true' : 'false' }}">
                 <i data-lucide="map-pinned"></i><span>Laporan</span><i data-lucide="chevron-down" class="chev"></i>
             </button>
             <div class="ng-b"><div>
@@ -49,6 +53,13 @@
                     <i data-lucide="search"></i>Cari Kode Laporan
                     @if ($laporanBaruBelumDibaca > 0)
                         <span class="badge">{{ $laporanBaruBelumDibaca }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.penugasan.index') }}" class="{{ request()->routeIs('admin.penugasan.*') ? 'on' : '' }}"
+                    aria-label="Penugasan Relawan, {{ $jumlahBelumDitugaskan }} laporan belum ditugaskan">
+                    <i data-lucide="users"></i>Penugasan Relawan
+                    @if ($jumlahBelumDitugaskan > 0)
+                        <span class="badge">{{ $jumlahBelumDitugaskan }}</span>
                     @endif
                 </a>
             </div></div>

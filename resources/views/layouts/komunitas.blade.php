@@ -45,6 +45,11 @@
                 <i data-lucide="calendar-clock"></i>Jadwal Siaga
             </a>
         @endif
+        @if (Route::has('komunitas.penugasan.index'))
+            <a href="{{ route('komunitas.penugasan.index') }}" class="{{ request()->routeIs('komunitas.penugasan.*') ? 'on' : '' }}">
+                <i data-lucide="clipboard-check"></i>Penugasan
+            </a>
+        @endif
         {{-- F-03 Pemetaan Titik Banjir --}}
         @if (Route::has('komunitas.konfirmasi.index'))
             <a href="{{ route('komunitas.konfirmasi.index') }}" class="{{ request()->routeIs('komunitas.konfirmasi.*') ? 'on' : '' }}" aria-label="Konfirmasi Lapangan, {{ $jumlahKonfirmasiDiminta }} permintaan menunggu">

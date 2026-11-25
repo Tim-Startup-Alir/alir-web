@@ -47,6 +47,19 @@ return [
         'radius_cakupan_default_m' => (int) env('ALIR_RADIUS_CAKUPAN_M', 1500),
     ],
 
+    // F-05: rekomendasi dan penugasan relawan
+    'penugasan' => [
+        'bobot' => [
+            'jarak' => 40,
+            'kapasitas' => 25,
+            'wilayah' => 20,
+            'jadwal' => 15,
+        ],
+        'radius_rekomendasi_km' => (float) env('ALIR_PENUGASAN_RADIUS_KM', 5),
+        'kecepatan_eta_kmh' => (float) env('ALIR_PENUGASAN_KECEPATAN_ETA_KMH', 15),
+        'batas_kandidat_per_kelurahan' => 3,
+    ],
+
     // FR-10 / mockup Inventaris: level stok aman, menipis, kritis
     'stok' => [
         // kritis jika stok <= persen_kritis% dari stok_minimum (atau stok habis)
