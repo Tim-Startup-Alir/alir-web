@@ -8,9 +8,11 @@ use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PasswordResetController extends Controller
@@ -29,11 +31,15 @@ class PasswordResetController extends Controller
             'email.email' => 'Masukkan format email yang valid.',
         ]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        $email = Str::lower((string) $request->input('email'));
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('success', 'Tautan atur ulang kata sandi telah dikirim ke email Anda.')
-            : back()->withInput($request->only('email'))->withErrors(['email' => 'Email tidak terdaftar atau tautan gagal dikirim.']);
+        if ($user && $user->is_active) {
+            Password::sendResetLink(['email' => $user->email]);
+        }
+
+        // Pesan selalu seragam untuk mencegah email enumeration.
+        return back()->with('success', 'Jika email terdaftar dan aktif, tautan atur ulang kata sandi telah dikirim ke email Anda.');
     }
 
     public function resetForm(Request $request, string $token): View
@@ -61,11 +67,25 @@ class PasswordResetController extends Controller
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, string $password): void {
+                if (! $user->is_active) {
+                    throw ValidationException::withMessages([
+                        'email' => 'Akun Anda belum aktif atau sedang dinonaktifkan. Hubungi Tim Startup ALIR.',
+                    ]);
+                }
+
+                if (Hash::check($password, $user->password)) {
+                    throw ValidationException::withMessages([
+                        'password' => 'Kata sandi baru tidak boleh sama dengan kata sandi sebelumnya.',
+                    ]);
+                }
+
                 $user->forceFill([
                     'password' => $password,
                     'wajib_ganti_sandi' => false,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $user->cabutSesiLain();
 
                 event(new PasswordReset($user));
 

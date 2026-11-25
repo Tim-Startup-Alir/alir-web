@@ -33,7 +33,14 @@ class AuthenticatedSessionController extends Controller
             ? route('admin.dashboard')
             : route('komunitas.dashboard');
 
-        return redirect()->intended($tujuan);
+        $intended = $request->session()->pull('url.intended');
+        $path = $intended ? (parse_url($intended, PHP_URL_PATH) ?: '') : '';
+        $intendedSesuaiRole = $intended && (
+            ($user->isAdmin() && str_starts_with($path, '/admin'))
+            || ($user->isKomunitas() && str_starts_with($path, '/komunitas'))
+        );
+
+        return redirect($intendedSesuaiRole ? $intended : $tujuan);
     }
 
     public function destroy(Request $request): RedirectResponse

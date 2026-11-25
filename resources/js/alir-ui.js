@@ -9,8 +9,31 @@ window.alirIcons = function () {
     }
 };
 
+window.alirMountHeroWater = function () {
+    document.querySelectorAll('[data-hero-water]').forEach((el) => {
+        if (el._hw) return;
+        el._hw = true;
+
+        const fillBottom = el.dataset.heroWater || '#F5F7FA';
+        const mkWave = (q, fill) =>
+            `<svg viewBox="0 0 2880 100" preserveAspectRatio="none"><path d="M0 50 Q 360 ${q} 720 50 T 1440 50 T 2160 50 T 2880 50 V 100 H 0 Z" fill="${fill}"/></svg>`;
+
+        el.classList.add('hw');
+        el.innerHTML =
+            `<div class="l l1">${mkWave(0, 'rgba(86,156,235,.14)')}</div>` +
+            `<div class="l l2">${mkWave(10, 'rgba(86,156,235,.22)')}</div>` +
+            `<div class="body"></div>` +
+            `<div class="l l3">${mkWave(5, fillBottom)}</div>`;
+
+        setTimeout(() => {
+            el.style.height = el.dataset.h || '190px';
+        }, 250);
+    });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     window.alirIcons();
+    window.alirMountHeroWater();
 
     if (window.NProgress) {
         window.NProgress.configure({ showSpinner: false, minimum: 0.12, trickleSpeed: 130, speed: 420 });

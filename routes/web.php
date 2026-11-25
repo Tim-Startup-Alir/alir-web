@@ -26,13 +26,19 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('/daftar', [RegisteredKomunitasController::class, 'create'])->name('register');
-    Route::post('/daftar', [RegisteredKomunitasController::class, 'store'])->name('register.store');
+    Route::post('/daftar', [RegisteredKomunitasController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('register.store');
     Route::get('/daftar/terkirim', [RegisteredKomunitasController::class, 'sent'])->name('register.sent');
 
     Route::get('/lupa-sandi', [PasswordResetController::class, 'requestForm'])->name('password.request');
-    Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
     Route::get('/reset-sandi/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
-    Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])->name('password.update');
+    Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 });
 
 Route::get('/daftar/verifikasi-email/{id}/{hash}', [RegisteredKomunitasController::class, 'verifyEmail'])
@@ -47,7 +53,7 @@ Route::put('/daftar/perbaikan/{komunitas}', [RegisteredKomunitasController::clas
     ->middleware('signed')
     ->name('register.perbaikan.update');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/ganti-sandi', [ForcePasswordChangeController::class, 'edit'])->name('password.force.edit');
@@ -64,7 +70,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'password.changed', 'role:admin'])
+    ->middleware(['auth', 'active', 'password.changed', 'role:admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -98,7 +104,7 @@ Route::prefix('admin')
 
 Route::prefix('komunitas')
     ->name('komunitas.')
-    ->middleware(['auth', 'verified', 'password.changed', 'role:komunitas_relawan'])
+    ->middleware(['auth', 'active', 'verified', 'password.changed', 'role:komunitas_relawan'])
     ->group(function () {
         Route::get('/', [KomunitasDashboardController::class, 'index'])->name('dashboard');
 
