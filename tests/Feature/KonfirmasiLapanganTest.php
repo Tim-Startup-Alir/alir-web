@@ -107,9 +107,8 @@ test('successful confirmation stores private proof, audit and updated confidence
         ->and(AuditLog::where('aksi', 'konfirmasi.jawab')->where('subjek_id', $konfirmasi->id)->exists())->toBeTrue()
         ->and($konfirmasi->foto_path)->not->toContain('..');
 })->with([
-    ['sesuai', 'tinggi'],
-    ['tidak_sesuai', 'rendah'],
-    ['tidak_ditemukan', 'rendah'],
+    ['terkonfirmasi', 'tinggi'],
+    ['tidak_terkonfirmasi', 'rendah'],
 ]);
 
 test('pending request is answered in place and duplicate submissions are rejected', function () {
@@ -120,14 +119,14 @@ test('pending request is answered in place and duplicate submissions are rejecte
     $pending = app(KonfirmasiLapanganService::class)->mintaKonfirmasi($laporan, $tirto, $admin);
 
     $this->actingAs($tirto->user)->post(route('komunitas.konfirmasi.store', $laporan), [
-        'hasil' => 'sesuai', 'foto' => fotoKonfirmasiPng(), 'catatan' => 'Sudah diperiksa.',
+        'hasil' => 'terkonfirmasi', 'foto' => fotoKonfirmasiPng(), 'catatan' => 'Sudah diperiksa.',
     ])->assertRedirect(route('komunitas.konfirmasi.index'));
 
     expect(KonfirmasiLapangan::where('laporan_banjir_id', $laporan->id)->count())->toBe(1)
         ->and($pending->fresh()->status)->toBe('dijawab');
 
     $this->post(route('komunitas.konfirmasi.store', $laporan), [
-        'hasil' => 'sesuai', 'foto' => fotoKonfirmasiPng(),
+        'hasil' => 'terkonfirmasi', 'foto' => fotoKonfirmasiPng(),
     ])->assertForbidden();
     expect(KonfirmasiLapangan::where('laporan_banjir_id', $laporan->id)->count())->toBe(1);
 });
@@ -139,7 +138,7 @@ test('validation rejects missing, wrong type, oversized proof and invalid result
     $tirto = komunitasKonfirmasi();
 
     $this->actingAs($tirto->user)->from(route('komunitas.konfirmasi.show', $laporan))
-        ->post(route('komunitas.konfirmasi.store', $laporan), ['hasil' => 'sesuai', 'catatan' => 'Isian tetap ada.'])
+        ->post(route('komunitas.konfirmasi.store', $laporan), ['hasil' => 'terkonfirmasi', 'catatan' => 'Isian tetap ada.'])
         ->assertSessionHasErrors('foto')->assertSessionHasInput('catatan', 'Isian tetap ada.');
 
     $this->post(route('komunitas.konfirmasi.store', $laporan), [
@@ -147,7 +146,7 @@ test('validation rejects missing, wrong type, oversized proof and invalid result
     ])->assertSessionHasErrors(['hasil', 'foto']);
 
     $this->post(route('komunitas.konfirmasi.store', $laporan), [
-        'hasil' => 'sesuai', 'foto' => UploadedFile::fake()->create('besar.jpg', 20, 'image/jpeg'),
+        'hasil' => 'terkonfirmasi', 'foto' => UploadedFile::fake()->create('besar.jpg', 20, 'image/jpeg'),
     ])->assertSessionHasErrors('foto');
 
     expect(KonfirmasiLapangan::count())->toBe(0);
@@ -162,7 +161,7 @@ test('failed confidence update rolls back confirmation and audit and deletes upl
         $mock->shouldReceive('hitungUlang')->andThrow(new RuntimeException('confidence failure'));
     });
 
-    expect(fn () => app(KonfirmasiLapanganService::class)->kirim($tirto, $laporan, 'sesuai', $foto, null, $tirto->user))
+    expect(fn () => app(KonfirmasiLapanganService::class)->kirim($tirto, $laporan, 'terkonfirmasi', $foto, null, $tirto->user))
         ->toThrow(RuntimeException::class);
 
     expect(KonfirmasiLapangan::count())->toBe(0)
@@ -177,7 +176,7 @@ test('community detail and admin payload omit reporter personal data and expose 
         'laporan_banjir_id' => $laporan->id,
         'komunitas_relawan_id' => $tirto->id,
         'status' => 'dijawab',
-        'hasil' => 'sesuai',
+        'hasil' => 'terkonfirmasi',
         'foto_path' => 'konfirmasi-lapangan/bukti.png',
         'catatan' => '<script>alert(1)</script>',
         'dijawab_pada' => now(),
@@ -186,7 +185,7 @@ test('community detail and admin payload omit reporter personal data and expose 
     $this->actingAs($tirto->user)->get(route('komunitas.konfirmasi.index'))->assertOk()
         ->assertDontSee('Nama Rahasia')->assertDontSee('081299991111')->assertDontSee('setuju_dihubungi');
     $this->actingAs($admin)->getJson(route('admin.peta-laporan.sekitar', $laporan))->assertOk()
-        ->assertJsonPath('laporan.konfirmasi.0.hasil', 'sesuai')
+        ->assertJsonPath('laporan.konfirmasi.0.hasil', 'terkonfirmasi')
         ->assertJsonPath('laporan.konfirmasi.0.komunitas', $tirto->nama)
         ->assertJsonMissingPath('laporan.konfirmasi.0.nomor_wa_pelapor')
         ->assertDontSee('Nama Rahasia')->assertDontSee('081299991111')->assertDontSee('setuju_dihubungi');
@@ -203,7 +202,7 @@ test('proof route enforces parent scope, role, and private storage', function ()
     $konfirmasi = KonfirmasiLapangan::create([
         'laporan_banjir_id' => $laporan->id,
         'komunitas_relawan_id' => $tirto->id,
-        'status' => 'dijawab', 'hasil' => 'sesuai',
+        'status' => 'dijawab', 'hasil' => 'terkonfirmasi',
         'foto_path' => 'konfirmasi-lapangan/proof.png', 'dijawab_pada' => now(),
     ]);
     $admin = User::where('email', 'admin@alir.test')->firstOrFail();

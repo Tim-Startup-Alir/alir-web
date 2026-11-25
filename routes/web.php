@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CariLaporanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
@@ -16,25 +17,40 @@ use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardCont
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
 use App\Http\Controllers\Komunitas\PenugasanRelawanController as KomunitasPenugasanRelawanController;
+use App\Http\Controllers\LaporanBanjirController;
 use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Halaman publik. Beranda + modal Lapor Banjir = F-02 (PBI-004/005/006);
+// Cuaca, Donasi, Edukasi masih placeholder untuk diisi pemilik fitur masing-masing.
+Route::view('/', 'landing.index')->name('landing');
+Route::view('/cuaca', 'publik.placeholder', ['judul' => 'Cuaca & Peringatan', 'kicker' => 'CUACA', 'ikon' => 'cloud-sun'])->name('cuaca');
+Route::view('/donasi', 'publik.placeholder', ['judul' => 'Donasi & Transparansi', 'kicker' => 'DONASI', 'ikon' => 'heart-handshake'])->name('donasi');
+Route::view('/edukasi', 'publik.placeholder', ['judul' => 'Edukasi Siaga Banjir', 'kicker' => 'EDUKASI', 'ikon' => 'book-open'])->name('edukasi');
+
+// F-02 Pelaporan Banjir publik tanpa login (NFR-02: CAPTCHA + rate limit)
+Route::post('/lapor', [LaporanBanjirController::class, 'store'])->middleware('throttle:lapor-banjir')->name('lapor.store');
+Route::post('/lapor/cek-lokasi', [LaporanBanjirController::class, 'cekLokasi'])->middleware('throttle:cek-lokasi')->name('lapor.cek-lokasi');
+Route::get('/lapor/diterima', [LaporanBanjirController::class, 'diterima'])->name('lapor.diterima');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('/daftar', [RegisteredKomunitasController::class, 'create'])->name('register');
-    Route::post('/daftar', [RegisteredKomunitasController::class, 'store'])->name('register.store');
+    Route::post('/daftar', [RegisteredKomunitasController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('register.store');
     Route::get('/daftar/terkirim', [RegisteredKomunitasController::class, 'sent'])->name('register.sent');
 
     Route::get('/lupa-sandi', [PasswordResetController::class, 'requestForm'])->name('password.request');
-    Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::post('/lupa-sandi', [PasswordResetController::class, 'sendResetLink'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
     Route::get('/reset-sandi/{token}', [PasswordResetController::class, 'resetForm'])->name('password.reset');
-    Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])->name('password.update');
+    Route::post('/reset-sandi', [PasswordResetController::class, 'resetPassword'])
+        ->middleware('throttle:6,1')
+        ->name('password.update');
 });
 
 Route::get('/daftar/verifikasi-email/{id}/{hash}', [RegisteredKomunitasController::class, 'verifyEmail'])
@@ -49,7 +65,7 @@ Route::put('/daftar/perbaikan/{komunitas}', [RegisteredKomunitasController::clas
     ->middleware('signed')
     ->name('register.perbaikan.update');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/ganti-sandi', [ForcePasswordChangeController::class, 'edit'])->name('password.force.edit');
@@ -66,7 +82,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'password.changed', 'role:admin'])
+    ->middleware(['auth', 'active', 'password.changed', 'role:admin'])
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -79,7 +95,8 @@ Route::prefix('admin')
         Route::post('penugasan/{penugasan}/batalkan', [AdminPenugasanRelawanController::class, 'batalkan'])->name('penugasan.batalkan');
         Route::post('penugasan/{penugasan}/alihkan', [AdminPenugasanRelawanController::class, 'alihkan'])->name('penugasan.alihkan');
 
-        // F-03 Pemetaan Titik Banjir
+        // F-02 & F-03 Pelaporan dan Pemetaan Titik Banjir
+        Route::get('laporan/cari', CariLaporanController::class)->name('laporan.cari');
         Route::get('peta-laporan', [PetaLaporanController::class, 'index'])->name('peta-laporan.index');
         Route::get('peta-laporan/data', [PetaLaporanController::class, 'data'])->middleware('throttle:60,1')->name('peta-laporan.data');
         Route::get('peta-laporan/{laporan}/sekitar', [PetaLaporanController::class, 'sekitar'])->middleware('throttle:60,1')->name('peta-laporan.sekitar');
@@ -109,11 +126,10 @@ Route::prefix('admin')
 
 Route::prefix('komunitas')
     ->name('komunitas.')
-    ->middleware(['auth', 'verified', 'password.changed', 'role:komunitas_relawan'])
+    ->middleware(['auth', 'active', 'verified', 'password.changed', 'role:komunitas_relawan'])
     ->group(function () {
         Route::get('/', [KomunitasDashboardController::class, 'index'])->name('dashboard');
 
-        // F-03 Pemetaan Titik Banjir
         Route::get('konfirmasi-lapangan', [KomunitasKonfirmasiLapanganController::class, 'index'])->name('konfirmasi.index');
         Route::get('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'show'])->name('konfirmasi.show');
         Route::post('konfirmasi-lapangan/{laporan}', [KomunitasKonfirmasiLapanganController::class, 'store'])

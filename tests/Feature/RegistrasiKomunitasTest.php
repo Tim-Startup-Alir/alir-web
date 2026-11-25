@@ -195,3 +195,55 @@ test('alur lengkap registrasi, verifikasi email, penolakan admin, perbaikan sign
 
     $this->get('/komunitas')->assertOk()->assertSee('Komunitas Relawan Pantai Bersatu');
 });
+
+test('membuka ulang tautan verifikasi email tidak mengirim notifikasi admin atau audit log ganda', function () {
+    Storage::fake('local');
+    Notification::fake();
+
+    $tirto = Wilayah::where('nama_kelurahan', 'Tirto')->firstOrFail();
+    $admin = User::where('email', 'admin@alir.test')->firstOrFail();
+
+    $this->post(route('register.store'), [
+        'nama' => 'Komunitas Relawan Replay',
+        'wilayah_id' => $tirto->id,
+        'posko_latitude' => $tirto->latitude,
+        'posko_longitude' => $tirto->longitude,
+        'nama_pic' => 'Budi',
+        'nomor_whatsapp_pic' => '081234567891',
+        'email' => 'replay@alir.test',
+        'total_anggota' => 10,
+        'jumlah_perahu' => 1,
+        'dokumen_pendukung' => UploadedFile::fake()->create('izin.pdf', 100, 'application/pdf'),
+        'password' => 'rahasia123',
+        'password_confirmation' => 'rahasia123',
+        'setuju_syarat' => '1',
+    ])->assertRedirect(route('register.sent'));
+
+    $user = User::where('email', 'replay@alir.test')->firstOrFail();
+    $verifyUrl = URL::temporarySignedRoute('register.verify-email', now()->addHour(), [
+        'id' => $user->id,
+        'hash' => sha1($user->getEmailForVerification()),
+    ]);
+
+    $this->get($verifyUrl)->assertOk();
+    $this->get($verifyUrl)->assertOk();
+
+    Notification::assertSentToTimes($admin, PendaftaranBaruAdminNotification::class, 1);
+    expect(
+        AuditLog::where('aksi', 'komunitas.verifikasi_email')
+            ->where('user_id', $user->id)
+            ->count()
+    )->toBe(1);
+});
+
+test('pendaftaran komunitas dibatasi oleh rate limiter', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $this->withServerVariables(['REMOTE_ADDR' => '10.20.30.41'])
+            ->post(route('register.store'), [])
+            ->assertRedirect();
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '10.20.30.41'])
+        ->post(route('register.store'), [])
+        ->assertTooManyRequests();
+});

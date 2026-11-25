@@ -22,18 +22,24 @@ return [
         'radius_m' => (int) env('ALIR_KLUSTER_RADIUS_M', 500),
         'rentang_jam' => (int) env('ALIR_KLUSTER_RENTANG_JAM', 24),
         // independen = nomor WA pelapor berbeda; laporan yang digabung tetap dihitung untuk induknya
-        // tinggi: konfirmasi lapangan "sesuai" ATAU >= laporan_tinggi pelapor independen
+        // tinggi: konfirmasi lapangan terkonfirmasi ATAU >= laporan_tinggi pelapor independen
         'laporan_tinggi' => (int) env('ALIR_KEPERCAYAAN_LAPORAN_TINGGI', 3),
-        // sedang: >= laporan_sedang pelapor independen; opsi foto dikendalikan flag di bawah.
+        // sedang: >= laporan_sedang pelapor independen.
         'laporan_sedang' => (int) env('ALIR_KEPERCAYAAN_LAPORAN_SEDANG', 2),
-        // F-03 Pemetaan Titik Banjir: foto hanya menaikkan level bila diaktifkan setelah uji coba.
-        'foto_menaikkan_ke_sedang' => (bool) env('ALIR_KEPERCAYAAN_FOTO_SEDANG', false),
     ],
 
     // F-03 Pemetaan Titik Banjir
     'konfirmasi' => [
         'radius_terdekat_m' => (int) env('ALIR_KONFIRMASI_RADIUS_M', 3000),
         'foto_maks_kb' => (int) env('ALIR_KONFIRMASI_FOTO_MAKS_KB', 5120),
+    ],
+
+    // F-02 Pelaporan Banjir (PBI-004)
+    'laporan' => [
+        'foto_maks_kb' => (int) env('ALIR_LAPORAN_FOTO_MAKS_KB', 5120),
+        // NFR-02: batas kirim laporan per IP
+        'batas_per_menit' => (int) env('ALIR_LAPORAN_BATAS_PER_MENIT', 5),
+        'batas_per_jam' => (int) env('ALIR_LAPORAN_BATAS_PER_JAM', 20),
     ],
 
     // FR-24: radius cadangan cakupan kelurahan bila batas_wilayah (GeoJSON) belum diisi

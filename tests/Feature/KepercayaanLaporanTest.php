@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\AuditLog;
-use App\Models\FotoLaporan;
 use App\Models\KomunitasRelawan;
 use App\Models\KonfirmasiLapangan;
 use App\Models\LaporanBanjir;
@@ -60,12 +59,13 @@ test('one two and three independent reporters map to low medium and high', funct
 test('same whatsapp in local and international formats counts once', function () {
     $laporan = laporanKepercayaan('081234567890');
     LaporanBanjirFactory::new()->dekatDari($laporan, 100)->nomorWa('+62 812-3456-7890')->create();
+    LaporanBanjirFactory::new()->dekatDari($laporan, 120)->nomorWa('62 812 3456 7890')->create();
 
     expect($laporan->fresh()->jumlahPelaporIndependen())->toBe(1)
         ->and($laporan->fresh()->hitungKepercayaan())->toBe('rendah');
 });
 
-test('far old and rejected reports are excluded while merged report counts for its parent', function () {
+test('far old, rejected and merged reports are excluded from independent count', function () {
     $laporan = laporanKepercayaan('081111111111');
     LaporanBanjirFactory::new()->dekatDari($laporan, 501)->nomorWa('082222222222')->create();
     LaporanBanjirFactory::new()->dekatDari($laporan, 100)->nomorWa('083333333333')->create(['created_at' => now()->subHours(25)]);
@@ -78,17 +78,17 @@ test('far old and rejected reports are excluded while merged report counts for i
     $service = app(KepercayaanLaporanService::class);
 
     expect($duplikat->fresh()->hitungKepercayaan())->toBe('rendah')
-        ->and($service->jumlahPelaporIndependen($laporan->fresh()))->toBe(2)
-        ->and($laporan->fresh()->hitungKepercayaan())->toBe('sedang');
+        ->and($service->jumlahPelaporIndependen($laporan->fresh()))->toBe(1)
+        ->and($laporan->fresh()->hitungKepercayaan())->toBe('rendah');
 });
 
-test('latest answered field confirmation overrides report counts and diminta is ignored', function () {
+test('positive confirmation raises confidence and negative confirmation is informational', function () {
     $laporan = laporanKepercayaan('081111111111');
     LaporanBanjirFactory::new()->dekatDari($laporan, 20)->nomorWa('082222222222')->create();
     LaporanBanjirFactory::new()->dekatDari($laporan, 40)->nomorWa('083333333333')->create();
     $waktu = now()->startOfSecond();
-    konfirmasiKepercayaan($laporan, 'sesuai', $waktu->copy()->subHour());
-    konfirmasiKepercayaan($laporan, 'tidak_sesuai', $waktu);
+    konfirmasiKepercayaan($laporan, 'terkonfirmasi', $waktu->copy()->subHour());
+    konfirmasiKepercayaan($laporan, 'tidak_terkonfirmasi', $waktu);
     KonfirmasiLapangan::create([
         'laporan_banjir_id' => $laporan->id,
         'komunitas_relawan_id' => KomunitasRelawan::firstOrFail()->id,
@@ -96,33 +96,37 @@ test('latest answered field confirmation overrides report counts and diminta is 
         'diminta_pada' => $waktu->copy()->addMinute(),
     ]);
 
-    expect($laporan->fresh()->hitungKepercayaan())->toBe('rendah')
-        ->and(app(KepercayaanLaporanService::class)->analisis($laporan->fresh())['konfirmasi']['hasil'])->toBe('tidak_sesuai');
+    expect($laporan->fresh()->hitungKepercayaan())->toBe('tinggi')
+        ->and(app(KepercayaanLaporanService::class)->analisis($laporan->fresh())['konfirmasi']['hasil'])->toBe('tidak_terkonfirmasi');
 });
 
-test('sesuai confirms high and negative confirms low even with three reporters', function (string $hasil, string $expected) {
+test('negative confirmation keeps confidence based on independent report count', function () {
     $laporan = laporanKepercayaan('081111111111');
     LaporanBanjirFactory::new()->dekatDari($laporan, 20)->nomorWa('082222222222')->create();
     LaporanBanjirFactory::new()->dekatDari($laporan, 40)->nomorWa('083333333333')->create();
-    konfirmasiKepercayaan($laporan, $hasil, now());
+    konfirmasiKepercayaan($laporan, 'tidak_terkonfirmasi', now());
 
-    expect($laporan->fresh()->hitungKepercayaan())->toBe($expected);
-})->with([
-    ['sesuai', 'tinggi'],
-    ['tidak_sesuai', 'rendah'],
-    ['tidak_ditemukan', 'rendah'],
-]);
+    expect($laporan->fresh()->hitungKepercayaan())->toBe('tinggi')
+        ->and(app(KepercayaanLaporanService::class)->analisis($laporan->fresh())['alasan'])->toContain('Dibantah lapangan; tingkat tetap berdasarkan laporan independen.');
+});
 
-test('runtime thresholds and optional photo rule control the level', function () {
+test('one positive confirmation raises a single independent report to high', function () {
+    $laporan = laporanKepercayaan('081111111111');
+    konfirmasiKepercayaan($laporan, 'terkonfirmasi', now());
+
+    expect($laporan->fresh()->hitungKepercayaan())->toBe('tinggi');
+});
+
+test('runtime thresholds control the level', function () {
     $laporan = laporanKepercayaan('081111111111');
     config(['alir.kepercayaan.laporan_tinggi' => 1, 'alir.kepercayaan.laporan_sedang' => 1]);
     expect($laporan->fresh()->hitungKepercayaan())->toBe('tinggi');
 
-    config(['alir.kepercayaan.laporan_tinggi' => 3, 'alir.kepercayaan.laporan_sedang' => 2, 'alir.kepercayaan.foto_menaikkan_ke_sedang' => false]);
-    FotoLaporan::create(['laporan_banjir_id' => $laporan->id, 'foto_path' => 'kepercayaan/foto.jpg', 'urutan' => 1]);
+    config(['alir.kepercayaan.laporan_tinggi' => 3, 'alir.kepercayaan.laporan_sedang' => 2]);
     expect($laporan->fresh()->hitungKepercayaan())->toBe('rendah');
 
-    config(['alir.kepercayaan.foto_menaikkan_ke_sedang' => true]);
+    LaporanBanjirFactory::new()->dekatDari($laporan, 50)->nomorWa('082222222222')->create();
+    config(['alir.kepercayaan.laporan_sedang' => 1]);
     expect($laporan->fresh()->hitungKepercayaan())->toBe('sedang');
 });
 

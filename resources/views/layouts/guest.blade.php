@@ -39,6 +39,7 @@
                 <div class="lg-chip"><b>SDGs 13</b><span>ketahanan iklim</span></div>
             </div>
         </div>
+        <div data-hero-water="#F5F7FA" data-h="90px" style="z-index:1" aria-hidden="true"></div>
     </aside>
 
     <main class="lg-form">

@@ -31,8 +31,11 @@
             <i data-lucide="layout-dashboard"></i>Ringkasan
         </a>
 
+        {{-- F-02 Pelaporan Banjir, F-03 Pemetaan Titik Banjir & F-05 Penugasan Relawan --}}
         @php
-            $laporanMenuActive = request()->routeIs('admin.peta-laporan.*', 'admin.penugasan.*');
+            $laporanMenuActive = request()->routeIs('admin.peta-laporan.*', 'admin.laporan.cari', 'admin.penugasan.*');
+            $laporanBaruBelumDibaca = auth()->user()->unreadNotifications()
+                ->where('type', \App\Notifications\LaporanBaruAdminNotification::class)->count();
             $jumlahBelumDitugaskan = \App\Models\LaporanBanjir::query()
                 ->where('status', 'terverifikasi')
                 ->whereDoesntHave('penugasan', fn ($query) => $query->whereIn('stage', \App\Models\Penugasan::STAGE_AKTIF))
@@ -45,6 +48,12 @@
             <div class="ng-b"><div>
                 <a href="{{ route('admin.peta-laporan.index') }}" class="{{ request()->routeIs('admin.peta-laporan.*') ? 'on' : '' }}">
                     <i data-lucide="map"></i>Peta Laporan
+                </a>
+                <a href="{{ route('admin.laporan.cari') }}" class="{{ request()->routeIs('admin.laporan.cari') ? 'on' : '' }}" dusk="menu-cari-laporan">
+                    <i data-lucide="search"></i>Cari Kode Laporan
+                    @if ($laporanBaruBelumDibaca > 0)
+                        <span class="badge">{{ $laporanBaruBelumDibaca }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.penugasan.index') }}" class="{{ request()->routeIs('admin.penugasan.*') ? 'on' : '' }}"
                     aria-label="Penugasan Relawan, {{ $jumlahBelumDitugaskan }} laporan belum ditugaskan">
