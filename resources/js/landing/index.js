@@ -5,6 +5,7 @@ import { mountReveal } from './reveal';
 import { radar } from './radar';
 import { mountHeroWater } from './hero';
 import { openLapor } from './lapor';
+import { openLacak } from './lacak';
 import { toast } from './modal';
 
 startPageLoad();
@@ -33,6 +34,10 @@ const init = () => {
     // delegasi: ikut bekerja di konten yang dirender belakangan
     document.addEventListener('click', async (e) => {
         if (e.target.closest('[data-open-lapor]')) return openLapor();
+        if (e.target.closest('[data-open-lacak]')) {
+            e.preventDefault(); // tautan tetap berfungsi tanpa JS (halaman /lacak)
+            return openLacak();
+        }
         const cp = e.target.closest('[data-copy]');
         if (cp) {
             const ok = await copyText(cp.dataset.copy);

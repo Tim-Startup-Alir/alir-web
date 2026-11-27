@@ -41,6 +41,7 @@
                 </p>
                 <div class="flex flex-wrap gap-2.5">
                     <button type="button" class="ld-pill ld-pill--coral" data-open-lapor dusk="hero-lapor">Lapor Banjir<i data-lucide="arrow-right" class="arr"></i></button>
+                    <a href="{{ route('lacak.index') }}" data-open-lacak class="ld-pill ld-pill--line" dusk="hero-lacak"><i data-lucide="search"></i>Lacak Laporan</a>
                 </div>
                 <p class="mt-5 flex items-center gap-2 text-[13px] font-semibold text-s-400">
                     <i data-lucide="shield-check" class="text-teal"></i>Tanpa login &middot; maksimal 3 langkah &middot; kabar status via WhatsApp

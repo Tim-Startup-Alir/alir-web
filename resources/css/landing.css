@@ -53,59 +53,129 @@
   .ld-ov { position: fixed; inset: 0; z-index: 2000; background: rgba(11, 30, 51, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; animation: alirFade .25s both }
   .ld-ov.is-closing { animation: alirFade .2s reverse both }
   .ld-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; background: #fff; border-radius: 28px; box-shadow: 0 24px 64px rgba(11, 30, 51, .35); animation: alirUp .35s both }
-  .ld-modal.lapor { width: min(720px, 100%); border: 1.5px solid #E2E8F0; display: flex; flex-direction: column; overflow: hidden }
   .ld-toast { position: fixed; z-index: 3000; right: 20px; bottom: 20px; max-width: min(420px, calc(100vw - 40px)); display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #0B1E33; color: #F5F7FA; font-size: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; box-shadow: 0 16px 40px rgba(11, 30, 51, .35); border-radius: 18px; animation: alirUp .3s both }
   .ld-toast .ti { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: #0B1E33; border-radius: 50% }
 
   /* modal Lapor Banjir (F-02) */
-  .lp-h { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--s-200); background: var(--coral); color: var(--navy); flex: none }
-  .lp-x { width: 36px; height: 36px; border: 1.5px solid rgba(11, 30, 51, .25); display: grid; place-items: center; border-radius: 50%; color: var(--navy); transition: all .2s }
-  .lp-x:hover { background: var(--navy); color: var(--coral) }
-  .lp-steps { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--s-200); flex: none }
-  .lp-steps > div { padding: 12px 14px; border-right: 1px solid var(--s-200); background: #fff; color: var(--s-500); transition: all .3s }
-  .lp-steps > div:last-child { border-right: 0 }
-  .lp-steps .on { background: var(--navy); color: #fff }
-  .lp-steps .done { background: var(--teal-tint); color: var(--teal-ink) }
-  .lp-steps small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em }
-  .lp-steps b { font-size: 13px }
-  .lp-body { padding: 20px; overflow: auto; flex: 1; min-height: 0 }
+  .ld-modal.lapor { width: min(640px, 100%); border: 0; border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 64px rgba(11, 30, 51, .3) }
+  .lp-h { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; background: #fff; flex: none }
+  .lp-hi { flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; background: var(--coral-tint); color: var(--coral-dark) }
+  .lp-hi svg { width: 22px; height: 22px }
+  .lp-ht { flex: 1; min-width: 0 }
+  .lp-ht h2 { font-size: 18px; font-weight: 800; line-height: 1.2; color: var(--navy) }
+  .lp-ht p { margin-top: 2px; font-size: 13px; color: var(--s-500) }
+  .lp-x { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--s-500); background: var(--s-100); transition: background .2s, color .2s }
+  .lp-x:hover { background: var(--navy); color: #fff }
+  .lp-x:disabled, .lp-back:disabled { opacity: .45; pointer-events: none }
+
+  /* stepper bernomor */
+  .lp-steps { display: flex; list-style: none; margin: 0; padding: 4px 20px 16px; flex: none; border-bottom: 1px solid var(--s-200) }
+  .lp-steps li { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; color: var(--s-400); font-size: 12.5px; font-weight: 700 }
+  .lp-steps li + li::before { content: ""; position: absolute; top: 15px; right: calc(50% + 20px); width: calc(100% - 40px); height: 2px; background: var(--s-200); border-radius: 2px; transition: background .3s }
+  .lp-steps li.on::before, .lp-steps li.done::before { background: var(--teal) }
+  .lp-steps .n { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--s-100); color: var(--s-500); font-weight: 800; font-size: 14px; transition: all .3s }
+  .lp-steps .n svg { width: 16px; height: 16px; stroke-width: 3 }
+  .lp-steps li.on { color: var(--navy) }
+  .lp-steps li.on .n { background: var(--navy); color: #fff; box-shadow: 0 0 0 4px rgba(11, 30, 51, .1) }
+  .lp-steps li.done { color: var(--teal-ink) }
+  .lp-steps li.done .n { background: var(--teal); color: #fff }
+
+  .lp-body { padding: 20px; overflow: auto; flex: 1; min-height: 0; overscroll-behavior: contain }
   .lp-in { animation: alirUp .35s both }
-  .lp-f { display: flex; justify-content: space-between; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--s-200); flex: none; background: #fff }
-  .lp-next { display: flex; align-items: center; justify-content: space-between; gap: 28px; min-width: 200px; padding: 12px 16px; border: 1.5px solid #E2E8F0; background: var(--navy); color: #fff; font-weight: 800; border-radius: 99px; transition: all .25s }
-  .lp-next:hover { background: var(--coral-dark); border-color: var(--coral-dark) }
+  .lp-q { font-size: 17px; font-weight: 800; color: var(--navy); line-height: 1.3; outline: none }
+  .lp-sub { margin-top: 2px; font-size: 13px; color: var(--s-500) }
+  .lp-lbl { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700; color: var(--navy) }
+  .lp-lbl i { font-style: normal; color: var(--coral-dark) }
+  .lp-lbl small { font-weight: 500; color: var(--s-500); font-size: 12.5px }
+
+  .lp-alert:empty { display: none }
+  .lp-alert { padding: 0 20px 12px; flex: none }
+  .lp-err { padding: 10px 12px; background: var(--red-tint); color: var(--red-ink); font-size: 13px; font-weight: 700; display: flex; gap: 8px; align-items: center; border-radius: 12px; animation: ldShake .35s both }
+  .lp-err svg { flex: none; width: 18px; height: 18px }
+  .lp-f { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 20px; border-top: 1px solid var(--s-200); flex: none; background: #fff }
+  .lp-back { display: inline-flex; align-items: center; gap: 6px; padding: 12px 16px; border-radius: 99px; font-weight: 700; font-size: 14px; color: var(--s-600); transition: background .2s }
+  .lp-back:hover { background: var(--s-100) }
+  .lp-back[disabled] { visibility: hidden }
+  .lp-next { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 170px; padding: 13px 22px; background: var(--navy); color: #fff; font-weight: 800; font-size: 15px; border-radius: 99px; transition: background .25s, transform .2s }
+  .lp-next:hover { background: var(--coral-dark) }
+  .lp-next:active { transform: scale(.98) }
   .lp-next[disabled] { opacity: .6; pointer-events: none }
-  .lp-err { margin-top: 14px; padding: 10px 12px; background: #FEE2E2; color: #991B1B; font-size: 13px; font-weight: 700; display: flex; gap: 8px; align-items: center; border-radius: 12px; animation: ldShake .35s both }
-  .lp-ok { margin-top: 12px; display: flex; gap: 10px; align-items: center; font-size: 14px; padding: 12px; border-radius: 12px; border: 1px solid var(--s-200); background: var(--paper, #F5F7FA) }
-  .lp-field { display: flex; border: 2px solid var(--s-200); border-radius: 14px; overflow: hidden; background: #fff; transition: border-color .2s, box-shadow .2s }
+
+  /* langkah 1 */
+  .lp-map { position: relative; isolation: isolate; height: clamp(220px, 38dvh, 320px); cursor: crosshair; overflow: hidden; border-radius: 18px; border: 1.5px solid var(--s-200); background: #dfe7ee }
+  .lp-gps { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; font-size: 13px; font-weight: 700; color: var(--navy); transition: all .2s; white-space: nowrap }
+  .lp-gps:hover { border-color: var(--navy) }
+  .lp-gps:disabled { opacity: .7 }
+  .lp-ok { margin-top: 10px; display: flex; gap: 10px; align-items: center; font-size: 13.5px; padding: 11px 12px; border-radius: 12px; background: var(--s-100); color: var(--s-600) }
+  .lp-ok[data-state=ok] { background: var(--teal-tint); color: var(--teal-ink) }
+  .lp-ok.bad { background: var(--red-tint); color: var(--red-ink) }
+  .lp-ok svg { flex: none; width: 18px; height: 18px }
+
+  /* input */
+  .lp-field { display: flex; border: 1.5px solid var(--s-200); border-radius: 14px; overflow: hidden; background: #fff; transition: border-color .2s, box-shadow .2s }
   .lp-field:focus-within { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
   .lp-field.ok { border-color: var(--teal) }
   .lp-field.bad { border-color: var(--red) }
-  .lp-field > span { padding: 12px 14px; background: var(--s-100); font-weight: 800; border-right: 1px solid var(--s-200); display: flex; gap: 6px; align-items: center; font-size: 14px }
-  .lp-field input, .lp-field textarea { flex: 1; min-width: 0; border: 0; padding: 12px 14px; font-size: 15px; font-weight: 500; outline: none; background: #fff; resize: none }
-  .sev-o { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 2px solid var(--s-200); background: #fff; text-align: left; color: var(--navy); border-radius: 16px; transition: all .25s }
-  .sev-o:hover { transform: translateY(-2px) }
-  .sev-o.on { background: var(--paper, #F5F7FA) }
-  .lp-drop { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; border: 2px dashed var(--navy); background: #F5F7FA; cursor: pointer; transition: background .25s; border-radius: 20px }
-  .lp-drop:hover, .lp-drop.drag { background: #FFF4EF }
-  .lp-stp { display: flex; align-items: center; border: 1.5px solid var(--s-200); border-radius: 14px; overflow: hidden; width: max-content }
-  .lp-stp button { width: 42px; height: 42px; background: #fff; display: grid; place-items: center }
+  .lp-field > span { padding: 0 12px; background: var(--s-100); font-weight: 800; border-right: 1px solid var(--s-200); display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--s-600) }
+  .lp-field input, .lp-field textarea { flex: 1; min-width: 0; border: 0; padding: 13px 14px; font-size: 15px; font-weight: 500; outline: none; background: #fff; resize: none }
+  .lp-ferr { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--red-ink) }
+  .lp-hint { margin-top: 6px; font-size: 12.5px; color: var(--s-500) }
+
+  /* langkah 2 */
+  .lp-sev { display: grid; gap: 10px }
+  @media (min-width: 560px) { .lp-sev { grid-template-columns: repeat(3, 1fr) } }
+  .sev-o { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1.5px solid var(--s-200); background: #fff; text-align: left; color: var(--navy); border-radius: 16px; transition: border-color .2s, box-shadow .2s, background .2s }
+  .sev-o:hover { border-color: var(--c, var(--s-400)) }
+  .sev-o:focus-visible { outline: 3px solid rgba(255, 106, 61, .45); outline-offset: 2px }
+  .sev-o b { display: flex; align-items: center; gap: 8px; font-size: 15px }
+  .sev-o b::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c) }
+  .sev-o small { font-size: 12px; line-height: 1.45; color: var(--s-500) }
+  .sev-o.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 7%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 20%, transparent) }
+  .sev-o.on::after { content: ""; position: absolute; top: 12px; right: 12px; width: 18px; height: 18px; border-radius: 50%; background: var(--c) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/12px no-repeat }
+  .lp-sev.bad .sev-o:not(.on) { border-color: var(--red) }
+  .lp-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px }
+  .lp-stp { display: flex; align-items: center; border: 1.5px solid var(--s-200); border-radius: 99px; overflow: hidden; width: max-content; background: #fff }
+  .lp-stp button { width: 44px; height: 44px; background: #fff; display: grid; place-items: center; color: var(--navy) }
   .lp-stp button:hover { background: var(--s-100) }
-  .lp-stp span { min-width: 64px; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums }
-  .lp-ferr { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--alert-ink, #B91C1C) }
-  .lp-ok.bad { border-color: #FCA5A5; background: #FEF2F2; color: #991B1B }
-  .lp-drop.bad { border-color: var(--red, #E5484D); background: #FEF2F2 }
-  .lp-stp input { width: 72px; height: 42px; border: 0; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; appearance: textfield }
+  .lp-stp input { width: 72px; height: 44px; border: 0; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; appearance: textfield }
   .lp-stp input::-webkit-outer-spin-button, .lp-stp input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0 }
+  .lp-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 22px 16px; border: 2px dashed var(--s-300); background: var(--s-100); cursor: pointer; transition: background .2s, border-color .2s; border-radius: 18px; text-align: center }
+  .lp-drop:hover, .lp-drop.drag { background: var(--coral-tint); border-color: var(--coral) }
+  .lp-drop:focus-within { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
+  .lp-drop.bad { border-color: var(--red); background: var(--red-tint) }
+  .lp-drop-ic { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--navy); color: var(--coral) }
+  .lp-drop b { display: block; font-size: 15px; color: var(--navy) }
+  .lp-drop small { font-size: 12.5px; color: var(--s-500) }
+  .lp-drop img { width: 100%; height: 170px; object-fit: cover; border-radius: 12px }
+  .lp-drop-ok { display: flex; align-items: center; gap: 6px; max-width: 100%; font-size: 13px; font-weight: 700; color: var(--teal-ink) }
+  .lp-drop-ok span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+  .lp-drop-ok u { flex: none; color: var(--coral-dark); margin-left: 4px }
+
+  /* langkah 3 */
+  .lp-sum { display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--s-100); font-size: 13.5px }
+  .lp-sum div { display: flex; align-items: center; gap: 10px; min-width: 0 }
+  .lp-sum svg { flex: none; width: 17px; height: 17px }
+  .lp-sum span { min-width: 0; overflow: hidden; text-overflow: ellipsis }
+  .lp-sum i.d { flex: none; width: 10px; height: 10px; margin: 0 3.5px; border-radius: 50% }
+  .lp-consent { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1.5px solid var(--s-200); border-radius: 14px; font-size: 13.5px; color: var(--s-600); cursor: pointer }
+  .lp-consent input { margin-top: 2px; width: 18px; height: 18px; flex: none; accent-color: var(--coral) }
   .lp-ts { min-height: 65px; display: flex; align-items: center }
+
   .ld-cov-label { background: transparent !important; border: 0 !important; box-shadow: none !important; font-size: 11px; font-weight: 800; color: #9A2E10; font-family: var(--font) }
   .ld-cov-label::before { display: none }
   .ld-check { animation: ldCheck .45s var(--ease) both }
   .map-fallback { position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(11, 30, 51, .06) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(11, 30, 51, .06) 39px 40px), #e7edf3 }
-  .leaflet-container { font-family: var(--font) }
   @media (max-width: 560px) {
-    .lp-steps small { display: none }
-    .lp-steps > div { padding: 10px 8px }
-    .lp-next { min-width: 0 }
+    .ld-ov:has(.ld-modal.lapor) { padding: 0; place-items: end center }
+    .ld-modal.lapor { width: 100%; max-height: 94dvh; border-radius: 24px 24px 0 0 }
+    .lp-h, .lp-body, .lp-f { padding-left: 16px; padding-right: 16px }
+    .lp-steps { padding-left: 8px; padding-right: 8px }
+    .lp-alert { padding: 0 16px 10px }
+    .lp-ht p { display: none }
+    .lp-next { min-width: 0; flex: 1 }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-in, .lp-err { animation: none }
   }
 
   /* hormati prefers-reduced-motion (mockup tidak; ini peningkatan) */
@@ -116,3 +186,27 @@
     html { scroll-behavior: auto }
   }
 }
+
+  /* spinner kecil untuk modal Lapor Banjir */
+  .lp-spin { display: inline-block; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(100, 116, 139, .25); border-top-color: var(--coral); animation: lpSpin .7s linear infinite }
+  .lp-spin-w { border-color: rgba(255, 255, 255, .35); border-top-color: #fff }
+  @keyframes lpSpin { to { transform: rotate(360deg) } }
+
+  /* linimasa Lacak Laporan */
+  .lk-tl { list-style: none; margin: 0; padding: 0 }
+  .lk-tl li { position: relative; display: flex; gap: 14px; padding-bottom: 22px }
+  .lk-tl li:last-child { padding-bottom: 0 }
+  .lk-tl li:not(:last-child)::before { content: ""; position: absolute; left: 13px; top: 30px; bottom: 2px; width: 2px; background: var(--s-200) }
+  .lk-tl li.lk-selesai:not(:last-child)::before { background: var(--teal) }
+  .lk-dot { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--s-300); background: #fff; color: #fff }
+  .lk-dot svg { width: 14px; height: 14px; stroke-width: 3 }
+  .lk-selesai .lk-dot { background: var(--teal); border-color: var(--teal) }
+  .lk-gagal .lk-dot { background: var(--red); border-color: var(--red) }
+  .lk-aktif .lk-dot { border-color: var(--coral); box-shadow: 0 0 0 5px rgba(255, 106, 61, .18); animation: lkPulse 1.6s ease-in-out infinite }
+  .lk-tl b { display: block; font-size: 15px; line-height: 28px; color: var(--navy) }
+  .lk-tl p { margin: 0; font-size: 13px; color: var(--s-500) }
+  .lk-tl time { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--teal-ink) }
+  .lk-belum b { color: var(--s-400) }
+  .lk-belum p { color: var(--s-400) }
+  @keyframes lkPulse { 50% { box-shadow: 0 0 0 8px rgba(255, 106, 61, 0) } }
+  @media (prefers-reduced-motion: reduce) { .lk-aktif .lk-dot { animation: none } }

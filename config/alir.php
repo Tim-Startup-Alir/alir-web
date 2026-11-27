@@ -42,6 +42,9 @@ return [
         // NFR-02: batas kirim laporan per IP
         'batas_per_menit' => (int) env('ALIR_LAPORAN_BATAS_PER_MENIT', 5),
         'batas_per_jam' => (int) env('ALIR_LAPORAN_BATAS_PER_JAM', 20),
+        // pelacakan laporan lewat kode: batas pencarian per IP
+        'lacak_per_menit' => (int) env('ALIR_LACAK_PER_MENIT', 10),
+        'lacak_per_jam' => (int) env('ALIR_LACAK_PER_JAM', 60),
     ],
 
     // FR-24: radius cadangan cakupan kelurahan bila batas_wilayah (GeoJSON) belum diisi

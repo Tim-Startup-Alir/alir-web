@@ -32,6 +32,11 @@
         </a>
     @endif
 
+    <a href="{{ route('lacak.index') }}" data-open-lacak dusk="nav-lacak" aria-label="Lacak Laporan"
+       class="flex flex-none items-center gap-2 rounded-full bg-white/10 px-3.5 py-2.5 text-sm font-bold whitespace-nowrap text-s-200 transition hover:bg-white/20 hover:text-white max-sm:px-3">
+        <i data-lucide="search"></i><span class="max-md:hidden">Lacak</span>
+    </a>
+
     <button type="button" data-open-lapor dusk="nav-lapor"
             class="flex flex-none items-center gap-2 rounded-full bg-coral px-4 py-2.5 text-sm font-extrabold whitespace-nowrap text-navy transition duration-300 ease-alir hover:scale-105 hover:bg-coral-hover max-sm:px-3">
         <i data-lucide="siren"></i><span class="max-sm:hidden">Lapor Banjir</span>

@@ -20,6 +20,7 @@
                     <a href="{{ route('donasi') }}">Donasi</a>
                     <a href="{{ route('edukasi') }}">Edukasi</a>
                     <button type="button" class="text-left font-bold !text-coral-hover hover:!text-white" data-open-lapor>Lapor banjir</button>
+                    <a href="{{ route('lacak.index') }}" data-open-lacak>Lacak laporan</a>
                 </div>
                 <div class="ld-foot-col flex flex-col gap-2.5 text-sm">
                     <span class="text-[11px] font-extrabold tracking-[.12em] text-s-500">KOMUNITAS</span>

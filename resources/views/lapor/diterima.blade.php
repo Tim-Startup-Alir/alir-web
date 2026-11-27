@@ -45,6 +45,7 @@
 
             <div class="mt-6 flex flex-wrap gap-3">
                 <a href="{{ route('landing') }}" class="ld-btn-dark">Kembali ke beranda<i data-lucide="arrow-right" class="arr"></i></a>
+                <a href="{{ route('lacak.show', $laporan->kode_pelacakan) }}" class="btn btn-ghost" dusk="lacak-laporan-ini"><i data-lucide="search"></i>Lacak laporan ini</a>
                 <a href="{{ route('landing', ['lapor' => 1]) }}" class="btn btn-ghost">Laporkan lokasi lain</a>
             </div>
         </div>

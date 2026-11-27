@@ -53,6 +53,18 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour((int) config('alir.laporan.batas_per_jam', 20))->by('lapor-jam|'.$request->ip())->response($tolak),
             ];
         });
-        RateLimiter::for('cek-lokasi', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        // Pelacakan laporan publik: kode pendek, jadi dibatasi ketat per IP agar tidak bisa ditebak massal
+        RateLimiter::for('lacak-laporan', function (Request $request) {
+            $pesan = 'Terlalu banyak pencarian dari perangkat ini. Coba lagi beberapa menit lagi.';
+            $tolak = fn (Request $request, array $headers) => $request->expectsJson()
+                ? response()->json(['message' => $pesan], 429, $headers)
+                : back()->withInput()->withErrors(['kode' => $pesan]);
+
+            return [
+                Limit::perMinute((int) config('alir.laporan.lacak_per_menit', 10))->by('lacak-menit|'.$request->ip())->response($tolak),
+                Limit::perHour((int) config('alir.laporan.lacak_per_jam', 60))->by('lacak-jam|'.$request->ip())->response($tolak),
+            ];
+        });
+        RateLimiter::for('cek-lokasi',fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
     }
 }

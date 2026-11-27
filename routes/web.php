@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
+use App\Http\Controllers\LacakLaporanController;
 use App\Http\Controllers\LaporanBanjirController;
 use App\Http\Controllers\ProfilKomunitasController;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,12 @@ Route::view('/edukasi', 'publik.placeholder', ['judul' => 'Edukasi Siaga Banjir'
 Route::post('/lapor', [LaporanBanjirController::class, 'store'])->middleware('throttle:lapor-banjir')->name('lapor.store');
 Route::post('/lapor/cek-lokasi', [LaporanBanjirController::class, 'cekLokasi'])->middleware('throttle:cek-lokasi')->name('lapor.cek-lokasi');
 Route::get('/lapor/diterima', [LaporanBanjirController::class, 'diterima'])->name('lapor.diterima');
+
+// Pelapor melacak progres laporan dengan kode ALR-XXXXXX (publik, dibatasi rate limit)
+Route::get('/lacak', [LacakLaporanController::class, 'index'])->name('lacak.index');
+Route::post('/lacak', [LacakLaporanController::class, 'cari'])->middleware('throttle:lacak-laporan')->name('lacak.cari');
+Route::get('/lacak/{kode}', [LacakLaporanController::class, 'show'])->where('kode', '[A-Za-z0-9\-]{1,20}')
+    ->middleware('throttle:lacak-laporan')->name('lacak.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
