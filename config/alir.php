@@ -36,6 +36,13 @@ return [
         'foto_maks_kb' => (int) env('ALIR_KONFIRMASI_FOTO_MAKS_KB', 5120),
     ],
 
+    // F-08 Dokumentasi dan Edukasi (PBI-022)
+    'dokumentasi' => [
+        'foto_maks_kb' => (int) env('ALIR_DOKUMENTASI_FOTO_MAKS_KB', 5120),
+        'video_maks_kb' => (int) env('ALIR_DOKUMENTASI_VIDEO_MAKS_KB', 51200),
+        'keterangan_maks' => 1000,
+    ],
+
     // F-02 Pelaporan Banjir (PBI-004)
     'laporan' => [
         'foto_maks_kb' => (int) env('ALIR_LAPORAN_FOTO_MAKS_KB', 5120),
