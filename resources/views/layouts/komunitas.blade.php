@@ -53,6 +53,11 @@
             </a>
         @endif
 
+        {{-- F-08 Dokumentasi dan Edukasi --}}
+        <a href="{{ route('komunitas.dokumentasi.index') }}" class="{{ request()->routeIs('komunitas.dokumentasi.*') ? 'on' : '' }}">
+            <i data-lucide="camera"></i>Dokumentasi Aksi
+        </a>
+
         <div style="margin-top:auto;padding-top:20px">
             <a href="{{ url('/') }}">
                 <i data-lucide="globe"></i>Lihat situs publik

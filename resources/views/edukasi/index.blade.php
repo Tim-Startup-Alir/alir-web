@@ -10,7 +10,7 @@
 @endpush
 
 @php
-    $lompat = [['#sim', 'ruler', 'Simulator'], ['#fase', 'list-checks', 'Fase'], ['#bag', 'backpack', 'Tas siaga'], ['#mitos', 'scale', 'Mitos'], ['#fakta', 'lightbulb', 'Fun facts'], ['#kuis', 'award', 'Kuis']];
+    $lompat = [['#sim', 'ruler', 'Simulator'], ['#fase', 'list-checks', 'Fase'], ['#konten', 'book-open', 'Artikel'], ['#bag', 'backpack', 'Tas siaga'], ['#mitos', 'scale', 'Mitos'], ['#fakta', 'lightbulb', 'Fun facts'], ['#kuis', 'award', 'Kuis']];
 @endphp
 
 @section('content')
@@ -62,20 +62,53 @@
         <div class="pbody" id="pbody"></div>
     </section>
 
-    <section id="artikel" class="es" data-reveal>
-        <span class="kicker">ARTIKEL EDUKASI</span>
-        <h2 class="h2e" style="margin:14px 0 32px;max-width:820px">Terbaru dari tim ALIR.</h2>
-        <div id="arts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
-            @forelse ($artikel as $a)
-                <article style="background:#fff;border-radius:24px;padding:22px;box-shadow:0 1px 2px rgba(11,30,51,.06);display:flex;flex-direction:column;gap:10px">
-                    <span style="align-self:flex-start;padding:4px 12px;border-radius:99px;background:#CCF3EE;color:#0E6B62;font-size:12px;font-weight:800">{{ $a['kategori'] }}</span>
-                    <h3 style="font-size:20px;letter-spacing:-.02em">{{ $a['judul'] }}</h3>
-                    <small style="color:var(--s-500)">Diperbarui {{ $a['diperbarui'] }}</small>
+    {{-- PBI-024: konten edukasi dari CMS, dibaca per kategori dan dapat dicari --}}
+    <section id="konten" class="es" data-reveal>
+        <span class="kicker">PUSTAKA EDUKASI</span>
+        <h2 class="h2e" style="margin:14px 0 8px;max-width:820px">Baca, cari, dan pahami.</h2>
+        <p class="muted" style="max-width:560px">Artikel, infografis, dan video dari Tim ALIR. Pilih kategori atau ketik kata kunci.</p>
+
+        <form method="GET" action="{{ route('edukasi') }}#konten" class="kn-search" role="search">
+            @if ($kategori !== '')<input type="hidden" name="kategori" value="{{ $kategori }}">@endif
+            <div class="box">
+                <i data-lucide="search"></i>
+                <input type="search" name="q" value="{{ $q }}" maxlength="100" placeholder="Cari, mis. tas siaga, sampah, listrik..." aria-label="Cari konten edukasi">
+            </div>
+            <button type="submit" class="ld-btn-dark">Cari</button>
+            @if ($q !== '' || $kategori !== '')<a href="{{ route('edukasi') }}#konten" class="link-b" style="align-self:center">Reset</a>@endif
+        </form>
+
+        <nav class="chips" aria-label="Kategori konten">
+            <a class="chip {{ $kategori === '' ? 'on' : '' }}" href="{{ route('edukasi', array_filter(['q' => $q])) }}#konten" @if ($kategori === '') aria-current="true" @endif>Semua</a>
+            @foreach (\App\Models\KontenEdukasi::LABEL_KATEGORI as $kode => $label)
+                <a class="chip {{ $kategori === $kode ? 'on' : '' }}" href="{{ route('edukasi', array_filter(['kategori' => $kode, 'q' => $q])) }}#konten" @if ($kategori === $kode) aria-current="true" @endif>{{ $label }}@if (($hitungKategori[$kode] ?? 0) > 0) <small style="opacity:.6">{{ $hitungKategori[$kode] }}</small>@endif</a>
+            @endforeach
+        </nav>
+
+        <div class="kn-grid" aria-live="polite">
+            @forelse ($konten as $k)
+                <article class="kn-card">
+                    <div class="kn-thumb">
+                        @if ($k->tipe === 'infografis' && $k->media_url)
+                            <img src="{{ $k->media_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">
+                        @else
+                            <i data-lucide="{{ ['artikel' => 'file-text', 'infografis' => 'image', 'video_sematan' => 'circle-play'][$k->tipe] }}"></i>
+                        @endif
+                    </div>
+                    <div class="kn-in">
+                        <span class="kn-pill">{{ $k->labelKategori() }}</span>
+                        <h3><a class="kn-link" href="{{ route('edukasi.show', $k) }}">{{ $k->judul }}</a></h3>
+                        @if ($k->isi)<p>{{ \Illuminate\Support\Str::limit(strip_tags($k->isi), 110) }}</p>@endif
+                        <div class="kn-foot"><span>{{ $k->labelTipe() }}</span><span>{{ $k->diterbitkan_pada?->translatedFormat('d M Y') }}</span></div>
+                    </div>
                 </article>
             @empty
-                <p>Belum ada artikel terbit.</p>
+                <div class="empty" style="grid-column:1/-1">
+                    @if ($q !== '')Tidak ada konten yang cocok dengan &ldquo;{{ $q }}&rdquo;.@else Belum ada konten pada kategori ini.@endif
+                </div>
             @endforelse
         </div>
+        <div class="kn-pager">{{ $konten->links() }}</div>
     </section>
 
     {{-- 03 TAS --}}

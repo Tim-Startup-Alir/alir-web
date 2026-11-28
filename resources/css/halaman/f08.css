@@ -1,0 +1,163 @@
+/* F-08 Dokumentasi & Edukasi: panel (komunitas/admin), galeri publik, dan baca konten edukasi. */
+
+/* ---------- Panel: kartu dokumentasi ---------- */
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; margin-top: 20px }
+.dk-card { background: #fff; border-radius: 24px; box-shadow: var(--sh-sm); overflow: hidden; display: flex; flex-direction: column }
+.dk-media { position: relative; aspect-ratio: 16 / 10; background: var(--navy); overflow: hidden }
+.dk-media img, .dk-media video { width: 100%; height: 100%; object-fit: cover; display: block }
+.dk-media .dk-kind { position: absolute; left: 12px; top: 12px; display: inline-flex; gap: 6px; align-items: center; padding: 4px 10px; border-radius: 99px; background: rgba(11, 30, 51, .78); color: #fff; font-size: 11.5px; font-weight: 700 }
+.dk-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 10px; flex: 1 }
+.dk-meta { display: flex; flex-wrap: wrap; gap: 6px }
+.dk-note { font-size: 14px; color: var(--s-600); line-height: 1.5; overflow-wrap: anywhere }
+.dk-link { font-size: 13px; color: var(--s-500) }
+.dk-link b { color: var(--navy) }
+.dk-reject { border-radius: 14px; background: var(--red-tint); color: var(--red-ink); padding: 10px 12px; font-size: 13px; line-height: 1.45 }
+.dk-reject b { display: block; margin-bottom: 2px }
+.dk-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px }
+.dk-actions form { display: contents }
+.dk-tolak { width: 100%; border-top: 1px dashed var(--s-200); padding-top: 10px; margin-top: 4px }
+.dk-tolak summary { cursor: pointer; list-style: none; display: inline-flex }
+.dk-tolak summary::-webkit-details-marker { display: none }
+.dk-tolak textarea { margin: 10px 0 }
+
+.dk-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 20px 0 0 }
+.dk-tabs a { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; font-weight: 700; font-size: 13.5px; color: var(--s-600); transition: .2s }
+.dk-tabs a:hover { border-color: var(--navy) }
+.dk-tabs a.on { background: var(--navy); border-color: var(--navy); color: #fff }
+.dk-tabs a b { min-width: 22px; height: 22px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 99px; background: var(--s-100); color: var(--navy); font-size: 12px }
+.dk-tabs a.on b { background: var(--coral); color: var(--navy) }
+
+/* form unggah */
+.dk-drop { border: 2px dashed var(--s-300); border-radius: 20px; padding: 22px; background: #FAFBFD; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; transition: .2s }
+.dk-drop:hover, .dk-drop.drag { border-color: var(--coral); background: var(--coral-tint) }
+.dk-drop input[type=file] { max-width: 100% }
+.dk-drop.err { border-color: var(--red) }
+.dk-preview { width: 100%; max-width: 420px; border-radius: 16px; overflow: hidden; background: var(--navy) }
+.dk-preview img, .dk-preview video { width: 100%; max-height: 280px; object-fit: contain; display: block }
+.dk-hint { font-size: 12.5px; color: var(--s-500) }
+.dk-count { font-size: 12px; color: var(--s-400); text-align: right }
+
+/* ---------- Panel: filter edukasi ---------- */
+.kn-filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px }
+.kn-filter .input { max-width: 220px }
+
+/* ---------- Publik: kepala halaman ---------- */
+.pg-f08 { min-height: 70vh; padding-bottom: 80px }
+.f8-head { max-width: 1240px; margin: 0 auto; padding: 120px var(--gutter) 0 }
+.f8-head h1 { font-size: clamp(36px, 5vw, 64px); line-height: .98; letter-spacing: -.04em; margin: 12px 0 14px }
+.f8-head h1 .c { color: var(--coral) }
+.f8-head p { color: var(--s-600); max-width: 640px; line-height: 1.6 }
+.f8-wrap { max-width: 1240px; margin: 0 auto; padding: 28px var(--gutter) 0 }
+.f8-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.f8-bar a.chip { display: inline-flex; align-items: center; gap: 8px }
+.f8-bar a.chip em { font-style: normal; font-size: 12px; opacity: .65 }
+
+/* ---------- Publik: galeri ---------- */
+.gl-region { margin-top: 44px }
+.gl-region > h2 { display: flex; align-items: center; gap: 10px; font-size: clamp(22px, 2.6vw, 32px); letter-spacing: -.03em }
+.gl-region > h2 :is(i, svg) { color: var(--coral); width: 28px; height: 28px; flex: none }
+.gl-com { margin-top: 22px }
+.gl-com > h3 :is(i, svg) { width: 18px; height: 18px }
+.gl-com > h3 { font-size: 15px; font-weight: 800; color: var(--s-600); display: flex; align-items: center; gap: 8px; margin-bottom: 12px }
+.gl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px }
+.gl-item { position: relative; display: block; width: 100%; text-align: left; border-radius: 20px; overflow: hidden; background: var(--navy); aspect-ratio: 4 / 3; box-shadow: var(--sh-sm); cursor: zoom-in }
+.gl-item img, .gl-item video { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease) }
+.gl-item:hover img, .gl-item:focus-visible img { transform: scale(1.06) }
+.gl-item:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px }
+.gl-cap { position: absolute; inset: auto 0 0 0; padding: 36px 14px 12px; background: linear-gradient(transparent, rgba(11, 30, 51, .88)); color: #fff; font-size: 13px; line-height: 1.4 }
+.gl-cap small { display: block; opacity: .75; margin-top: 2px; font-size: 11.5px }
+.gl-play { position: absolute; right: 12px; top: 12px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .92); color: var(--navy) }
+
+.gl-dialog { margin: auto; border: 0; padding: 0; background: transparent; max-width: min(960px, 94vw); width: 100%; max-height: 92vh; overflow: visible }
+.gl-dialog::backdrop { background: rgba(6, 18, 31, .82); backdrop-filter: blur(4px) }
+.gl-dialog .gl-box { background: #fff; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; max-height: 92vh }
+.gl-dialog .gl-stage { background: #000; display: grid; place-items: center; min-height: 200px }
+.gl-dialog .gl-stage img, .gl-dialog .gl-stage video { max-width: 100%; max-height: 66vh; display: block }
+.gl-dialog .gl-info { padding: 16px 20px 20px; overflow: auto }
+.gl-dialog .gl-info p { margin: 6px 0 0; color: var(--s-600); line-height: 1.55; overflow-wrap: anywhere }
+.gl-dialog .gl-x { position: absolute; right: 10px; top: 10px; z-index: 2 }
+
+/* ---------- Publik: konten edukasi ---------- */
+.kn-search { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 14px }
+.kn-search .box { position: relative; flex: 1 1 280px }
+.kn-search .box :is(i, svg) { width: 20px; height: 20px; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--s-400); pointer-events: none }
+.kn-search input[type=search] { width: 100%; height: 50px; padding: 0 18px 0 46px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; outline: 0; transition: .2s }
+.kn-search input[type=search]:focus { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
+.kn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 24px }
+.kn-card { background: #fff; border-radius: 24px; box-shadow: var(--sh-sm); display: flex; flex-direction: column; overflow: hidden; transition: transform .3s var(--ease), box-shadow .3s }
+.kn-card:hover { transform: translateY(-4px); box-shadow: var(--sh-md) }
+.kn-thumb { aspect-ratio: 16 / 9; background: linear-gradient(135deg, var(--navy-2), var(--navy-3)); display: grid; place-items: center; color: rgba(255, 255, 255, .85); overflow: hidden }
+.kn-thumb img { width: 100%; height: 100%; object-fit: cover }
+.kn-thumb :is(i, svg) { width: 38px; height: 38px }
+.kn-card .kn-in { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1 }
+.kn-card h3 { font-size: 19px; letter-spacing: -.02em; line-height: 1.25 }
+.kn-card p { color: var(--s-600); font-size: 14px; line-height: 1.55 }
+.kn-card .kn-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--s-500) }
+.kn-card a.kn-link::after { content: ""; position: absolute; inset: 0 }
+.kn-card { position: relative }
+.kn-pill { align-self: flex-start; padding: 4px 12px; border-radius: 99px; background: var(--teal-tint); color: var(--teal-ink); font-size: 12px; font-weight: 800 }
+.kn-article { max-width: 760px; margin: 0 auto; padding: 120px var(--gutter) 0 }
+.kn-article h1 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.04; letter-spacing: -.035em; margin: 14px 0 12px }
+.kn-article .kn-sub { color: var(--s-500); font-size: 14px }
+.kn-body { margin-top: 28px; font-size: 17px; line-height: 1.75; color: var(--s-600); overflow-wrap: anywhere }
+.kn-body p { margin: 0 0 1.1em }
+.kn-media { margin-top: 28px; border-radius: 24px; overflow: hidden; background: var(--navy); aspect-ratio: 16 / 9 }
+.kn-media iframe { width: 100%; height: 100%; border: 0; display: block }
+.kn-media.img { aspect-ratio: auto }
+.kn-media.img img { width: 100%; display: block }
+.kn-back { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--s-600) }
+.kn-back:hover { color: var(--navy) }
+.kn-rel { max-width: 1240px; margin: 56px auto 0; padding: 0 var(--gutter) }
+.kn-pager { margin-top: 28px }
+
+@media (prefers-reduced-motion: reduce) {
+  .gl-item img, .kn-card { transition: none }
+  .gl-item:hover img { transform: none }
+}
+
+/* chip filter pada halaman galeri (style .chip bawaan hanya berlaku di Donasi dan Edukasi) */
+.pg-f08 .chips { display: flex; gap: 8px; flex-wrap: wrap }
+.pg-f08 .chip { height: 36px; padding: 0 16px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; font-weight: 600; font-size: 13.5px; transition: .2s }
+.pg-f08 .chip:hover { border-color: var(--navy) }
+.pg-f08 .chip.on { background: var(--navy); border-color: var(--navy); color: #fff }
+.pg-f08 .empty { padding: 40px; text-align: center; color: var(--s-400); font-weight: 600 }
+.pg-f08 .f8-bar .chip { display: inline-flex; align-items: center }
+
+/* Paginasi galeri */
+.gl-pager { margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 12px }
+
+/* Halaman konten visual (video sematan / infografis) */
+.kv-hero { background: linear-gradient(160deg, var(--navy), var(--navy-2)); color: #fff; padding: 118px 0 92px }
+.kv-in { max-width: 980px; margin: 0 auto; padding: 0 var(--gutter) }
+.kv-back { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: rgba(255, 255, 255, .75) }
+.kv-back:hover { color: #fff }
+.kv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 26px }
+.kv-pill { padding: 5px 14px; border-radius: 99px; background: var(--teal-tint); color: var(--teal-ink); font-size: 12px; font-weight: 800 }
+.kv-type { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, .75) }
+.kv-type :is(i, svg) { width: 16px; height: 16px }
+.kv-hero h1 { margin: 14px 0 0; font-size: clamp(28px, 4.4vw, 50px); line-height: 1.06; letter-spacing: -.035em; color: #fff; overflow-wrap: anywhere }
+.kv-stage-wrap { max-width: 980px; margin: -58px auto 0; padding: 0 var(--gutter); position: relative; z-index: 2 }
+.kv-stage { border-radius: 24px; overflow: hidden; background: #000; aspect-ratio: 16 / 9; box-shadow: 0 24px 60px rgba(11, 30, 51, .28), 0 0 0 6px rgba(255, 255, 255, .9) }
+.kv-stage iframe { width: 100%; height: 100%; border: 0; display: block }
+.kv-stage.img { aspect-ratio: auto; background: #fff; margin: 0 }
+.kv-stage.img img { width: 100%; display: block }
+.kv-cols { max-width: 980px; margin: 36px auto 0; padding: 0 var(--gutter); display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; align-items: start }
+.kv-desc h2 { font-size: 22px; letter-spacing: -.02em; margin-bottom: 14px }
+.kv-desc p { font-size: 17px; line-height: 1.75; color: var(--s-600); margin: 0 0 1.1em; overflow-wrap: anywhere }
+.kv-desc .kv-empty { color: var(--s-400); font-style: italic }
+.kv-side { background: #fff; border-radius: 24px; box-shadow: var(--sh-sm); padding: 22px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 96px }
+.kv-side dl { display: grid; gap: 12px; margin: 0 0 6px }
+.kv-side dl div { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--s-100) }
+.kv-side dt { font-size: 12.5px; font-weight: 700; color: var(--s-500) }
+.kv-side dd { margin: 0; font-size: 14px; font-weight: 800; text-align: right }
+.kv-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: 99px; background: var(--coral); color: #fff; font-weight: 800; font-size: 14.5px; text-align: center; transition: .2s }
+.kv-btn:hover { background: var(--coral-hover, var(--coral)); transform: translateY(-1px) }
+.kv-btn.ghost { background: var(--s-100); color: var(--navy) }
+.kv-btn.ghost:hover { background: var(--s-200) }
+.kv-btn :is(i, svg) { width: 18px; height: 18px; flex: none }
+@media (max-width: 820px) {
+  .kv-hero { padding: 104px 0 76px }
+  .kv-cols { grid-template-columns: 1fr; gap: 24px }
+  .kv-side { position: static }
+  .kv-stage { border-radius: 18px; box-shadow: 0 16px 40px rgba(11, 30, 51, .25), 0 0 0 4px rgba(255, 255, 255, .9) }
+}

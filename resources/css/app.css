@@ -9,6 +9,7 @@
 @import './halaman/donasi.css';
 @import './halaman/donasi-modal.css';
 @import './halaman/edukasi.css';
+@import './halaman/f08.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
