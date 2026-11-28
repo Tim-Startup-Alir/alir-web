@@ -57,6 +57,6 @@ class KonfirmasiLapangan extends Model
 
     public function isTerkonfirmasi(): bool
     {
-        return $this->status === 'dijawab' && $this->hasil === 'sesuai';
+        return $this->status === 'dijawab' && $this->hasil === 'terkonfirmasi';
     }
 }

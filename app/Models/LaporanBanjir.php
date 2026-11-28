@@ -131,7 +131,7 @@ class LaporanBanjir extends Model
     /**
      * FR-26: jumlah pelapor independen di sekitar laporan ini.
      * Independen = nomor WhatsApp pelapor berbeda. Dihitung dari laporan dalam radius & rentang waktu
-     * (config alir.kepercayaan), ditambah laporan yang sudah digabung ke laporan ini. Laporan ditolak tidak dihitung.
+     * (config alir.kepercayaan), termasuk laporan ini. Laporan ditolak dan yang sudah digabung tidak dihitung.
      */
     public function jumlahPelaporIndependen(): int
     {

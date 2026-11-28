@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable(['name', 'email', 'password', 'role', 'is_active', 'wajib_ganti_sandi', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
@@ -76,5 +78,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function auditLog(): HasMany
     {
         return $this->hasMany(AuditLog::class);
+    }
+
+    /**
+     * Menghapus seluruh sesi aktif pengguna pada driver database (kecuali sesi saat ini bila diberikan).
+     */
+    public function cabutSesiLain(?string $kecualiSessionId = null): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        $table = config('session.table', 'sessions');
+        if (! Schema::hasTable($table)) {
+            return;
+        }
+
+        DB::table($table)
+            ->where('user_id', $this->getKey())
+            ->when($kecualiSessionId, fn ($q) => $q->where('id', '!=', $kecualiSessionId))
+            ->delete();
     }
 }
