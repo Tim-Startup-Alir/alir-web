@@ -101,6 +101,26 @@
             </div>
         </div>
 
+        {{-- F-08 Dokumentasi dan Edukasi --}}
+        @php
+            $konten08Active = request()->routeIs('admin.dokumentasi.*', 'admin.edukasi.*');
+            $antreanDokumentasi = \App\Models\Dokumentasi::menunggu()->count();
+        @endphp
+        <div class="ng {{ $konten08Active ? 'open has-on' : '' }}">
+            <button type="button" class="ng-h" aria-expanded="{{ $konten08Active ? 'true' : 'false' }}">
+                <i data-lucide="camera"></i><span>Dokumentasi &amp; Edukasi</span><i data-lucide="chevron-down" class="chev"></i>
+            </button>
+            <div class="ng-b"><div>
+                <a href="{{ route('admin.dokumentasi.index') }}" class="{{ request()->routeIs('admin.dokumentasi.*') ? 'on' : '' }}">
+                    <i data-lucide="image-play"></i>Moderasi Dokumentasi
+                    @if ($antreanDokumentasi > 0)<span class="badge">{{ $antreanDokumentasi }}</span>@endif
+                </a>
+                <a href="{{ route('admin.edukasi.index') }}" class="{{ request()->routeIs('admin.edukasi.*') ? 'on' : '' }}">
+                    <i data-lucide="book-open"></i>Konten Edukasi
+                </a>
+            </div></div>
+        </div>
+
         <div style="margin-top:auto;padding-top:20px">
             <a href="{{ url('/') }}">
                 <i data-lucide="globe"></i>Lihat situs publik

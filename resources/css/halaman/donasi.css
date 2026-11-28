@@ -1,0 +1,65 @@
+/* Port dari reference/mockup-alir (donasi.css), semua selector di-scope ke .pg-donasi */
+
+.pg-donasi {
+/* ===== Donasi: mengacu ke ALIR Donasi.dc.html ===== */
+.dn-h{max-width:1360px;margin:0 auto;padding:128px var(--gutter) 0}
+.dn-h1{font-size:clamp(40px,5.4vw,76px);line-height:.95;letter-spacing:-.04em;margin:14px 0 32px;max-width:900px}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:20px}
+.fs{transition:opacity .3s}
+.fs .b{height:4px;background:var(--s-300);overflow:hidden;border-radius:99px}.fs .b i{display:block;height:100%;width:0;background:var(--coral);transition:width .8s var(--ease)}
+.fs.on .b i{width:100%}
+.fs .n{display:flex;gap:10px;align-items:baseline;margin-top:12px}.fs .n span{font-size:13px;font-weight:800;color:var(--coral-dark)}.fs .n b{font-size:17px}
+.fs small{display:block;font-size:13px;color:var(--s-600);margin-top:2px}
+.dn-main{max-width:1360px;margin:0 auto;padding:48px var(--gutter) 0;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
+.cat-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--s-200);margin-bottom:20px}
+.lk{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;transition:color .2s}.lk:hover{color:var(--coral-dark)}
+.cat-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));gap:18px}
+.dc{display:flex;flex-direction:column;background:#fff;border:1px solid var(--s-200);border-radius:24px;overflow:hidden;transition:border-color .3s,box-shadow .3s;animation:alirUp .5s backwards}
+.dc:hover{border-color:var(--navy);transform:translateY(-4px);box-shadow:0 18px 40px rgba(11,30,51,.12)}
+.dc .ph{position:relative;height:150px;background:var(--s-200);overflow:hidden}
+.dc .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.dc .ph .tag{position:absolute;top:10px;left:10px}
+.dc .bd{padding:16px 16px 0;display:flex;flex-direction:column;gap:4px;flex:1}
+.dc h3{font-size:20px;margin:0}
+.dc .pct{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.dc .btn-d{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--navy);color:#fff;font-weight:800;font-size:14px;transition:all .25s var(--ease);border-radius:99px;margin:0 12px 12px;width:calc(100% - 24px)}
+.dc .btn-d:hover:not([disabled]){background:var(--coral);color:var(--navy)}
+.dc .btn-d[disabled]{opacity:.5;cursor:default}
+.dc .btn-d .arr{transition:transform .3s var(--ease)}.dc .btn-d:hover .arr{transform:translateX(5px)}
+.dn-side{flex:1 1 300px;min-width:0;position:sticky;top:96px}
+.side-h{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:1px solid var(--s-200)}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--teal-ink)}.live i{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 1.2s infinite}
+.dr{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:12px 8px;margin:0 -8px;border-bottom:1px solid var(--s-200);transition:background 1.6s}
+.dr.new{background:#FFEDE6;transition:none}
+.dr .av{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;font-weight:800;font-size:12px}
+.dr b{display:block;font-size:14px}.dr .it{display:block;font-size:12px;color:var(--s-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dr .am{text-align:right}.dr .am b{font-size:13px;font-variant-numeric:tabular-nums}.dr .am small{font-size:11px;color:var(--s-500)}
+
+
+/* hero Donasi: biru malam dengan cahaya hangat (beda dari Cuaca dan Edukasi) */
+.dn-hero{position:relative;overflow:hidden;color:#F5F7FA;padding:128px 0 150px;background:radial-gradient(60% 70% at 10% 8%,rgba(245,165,36,.26),transparent 62%),radial-gradient(55% 70% at 95% 0%,rgba(255,106,61,.30),transparent 62%),linear-gradient(180deg,#0B1E33 0%,#10304F 100%)}
+.dn-in{position:relative;z-index:2;max-width:1360px;margin:0 auto;padding:0 var(--gutter);display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:48px;align-items:center}
+@media(max-width:960px){.dn-in{grid-template-columns:1fr}}
+.dn-hero .dn-h1{color:#fff;margin:14px 0 30px}
+.dn-hero .fs .b{background:rgba(248,250,252,.2)}
+.dn-hero .fs .n b{color:#fff}.dn-hero .fs .n span{color:#FF8A63}.dn-hero .fs small{color:#94A3B8}
+.dn-stat{padding:24px}
+.dn-stat .sl{font-size:12px;font-weight:800;letter-spacing:.12em;color:#94A3B8}
+.dn-stat .sv{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.dn-stat .sv b{font-size:clamp(34px,4vw,48px);letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.dn-stat .sv small{color:#CBD5E1;font-size:14px}
+.dn-stat .sr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(248,250,252,.12)}
+.dn-stat .sr span{font-size:12px;color:#94A3B8}.dn-stat .sr b{display:block;font-size:22px;color:#fff;letter-spacing:-.02em}
+.dn-floats{position:absolute;inset:0;pointer-events:none;z-index:1}
+.dn-floats .fl{position:absolute;display:grid;place-items:center;border-radius:50%;animation:eduBob 4.4s ease-in-out infinite;box-shadow:0 20px 40px rgba(6,18,31,.35)}
+.dn-floats .f1{width:74px;height:74px;right:6%;top:16%;background:#FF6A3D;color:#0B1E33}
+.dn-floats .f2{width:56px;height:56px;right:7%;bottom:11%;background:#F5A524;color:#0B1E33;animation-duration:5.2s}
+.dn-floats .f3{width:48px;height:48px;right:24%;bottom:20%;background:rgba(248,250,252,.12);color:#FFD3C2;animation-duration:3.8s}
+.dn-floats .fl [data-lucide]{width:44%;height:44%}
+@media(max-width:960px){.dn-floats .f2,.dn-floats .f3{display:none}}
+.dn-main{padding-top:24px}
+
+
+
+
+}

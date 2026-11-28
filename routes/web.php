@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Admin\CariLaporanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DokumentasiController as AdminDokumentasiController;
 use App\Http\Controllers\Admin\JadwalKesiapsiagaanController as AdminJadwalController;
 use App\Http\Controllers\Admin\KomunitasController as AdminKomunitasController;
 use App\Http\Controllers\Admin\KonfirmasiLapanganController as AdminKonfirmasiLapanganController;
+use App\Http\Controllers\Admin\KontenEdukasiController as AdminKontenEdukasiController;
 use App\Http\Controllers\Admin\PenugasanRelawanController as AdminPenugasanRelawanController;
 use App\Http\Controllers\Admin\PetaLaporanController;
 use App\Http\Controllers\Admin\WilayahController as AdminWilayahController;
@@ -14,24 +16,41 @@ use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisteredKomunitasController;
 use App\Http\Controllers\Komunitas\DashboardController as KomunitasDashboardController;
+use App\Http\Controllers\Komunitas\DokumentasiController as KomunitasDokumentasiController;
 use App\Http\Controllers\Komunitas\JadwalKesiapsiagaanController as KomunitasJadwalController;
 use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonfirmasiLapanganController;
+use App\Http\Controllers\LacakLaporanController;
 use App\Http\Controllers\Komunitas\PenugasanRelawanController as KomunitasPenugasanRelawanController;
 use App\Http\Controllers\LaporanBanjirController;
 use App\Http\Controllers\ProfilKomunitasController;
+use App\Http\Controllers\Publik\CuacaController;
+use App\Http\Controllers\Publik\DonasiController;
+use App\Http\Controllers\Publik\EdukasiController;
+use App\Http\Controllers\Publik\GaleriController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman publik. Beranda + modal Lapor Banjir = F-02 (PBI-004/005/006);
-// Cuaca, Donasi, Edukasi masih placeholder untuk diisi pemilik fitur masing-masing.
+// Cuaca, Donasi, Edukasi: tampilan FE saja (data contoh), tinggal diisi pemilik PBI masing-masing.
 Route::view('/', 'landing.index')->name('landing');
-Route::view('/cuaca', 'publik.placeholder', ['judul' => 'Cuaca & Peringatan', 'kicker' => 'CUACA', 'ikon' => 'cloud-sun'])->name('cuaca');
-Route::view('/donasi', 'publik.placeholder', ['judul' => 'Donasi & Transparansi', 'kicker' => 'DONASI', 'ikon' => 'heart-handshake'])->name('donasi');
-Route::view('/edukasi', 'publik.placeholder', ['judul' => 'Edukasi Siaga Banjir', 'kicker' => 'EDUKASI', 'ikon' => 'book-open'])->name('edukasi');
+Route::get('/cuaca', [CuacaController::class, 'index'])->name('cuaca');
+Route::get('/donasi', [DonasiController::class, 'index'])->name('donasi');
+Route::get('/edukasi', [EdukasiController::class, 'index'])->name('edukasi');
+Route::get('/edukasi/{konten}', [EdukasiController::class, 'show'])->where('konten', '[a-z0-9\-]+')->name('edukasi.show');
+
+// F-08 Galeri aksi relawan (PBI-023): hanya dokumentasi yang disetujui
+Route::get('/galeri', [GaleriController::class, 'index'])->name('galeri');
+Route::get('/galeri/{dokumentasi}/media', [GaleriController::class, 'media'])->middleware('throttle:120,1')->name('galeri.media');
 
 // F-02 Pelaporan Banjir publik tanpa login (NFR-02: CAPTCHA + rate limit)
 Route::post('/lapor', [LaporanBanjirController::class, 'store'])->middleware('throttle:lapor-banjir')->name('lapor.store');
 Route::post('/lapor/cek-lokasi', [LaporanBanjirController::class, 'cekLokasi'])->middleware('throttle:cek-lokasi')->name('lapor.cek-lokasi');
 Route::get('/lapor/diterima', [LaporanBanjirController::class, 'diterima'])->name('lapor.diterima');
+
+// Pelapor melacak progres laporan dengan kode ALR-XXXXXX (publik, dibatasi rate limit)
+Route::get('/lacak', [LacakLaporanController::class, 'index'])->name('lacak.index');
+Route::post('/lacak', [LacakLaporanController::class, 'cari'])->middleware('throttle:lacak-laporan')->name('lacak.cari');
+Route::get('/lacak/{kode}', [LacakLaporanController::class, 'show'])->where('kode', '[A-Za-z0-9\-]{1,20}')
+    ->middleware('throttle:lacak-laporan')->name('lacak.show');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -122,6 +141,17 @@ Route::prefix('admin')
             ->names('jadwal')
             ->parameters(['jadwal-kesiapsiagaan' => 'jadwal'])
             ->except(['show']);
+
+        // F-08 Moderasi dokumentasi (PBI-022) dan konten edukasi (PBI-024)
+        Route::get('dokumentasi', [AdminDokumentasiController::class, 'index'])->name('dokumentasi.index');
+        Route::get('dokumentasi/{dokumentasi}/media', [AdminDokumentasiController::class, 'media'])->name('dokumentasi.media');
+        Route::post('dokumentasi/{dokumentasi}/setujui', [AdminDokumentasiController::class, 'setujui'])->name('dokumentasi.setujui');
+        Route::post('dokumentasi/{dokumentasi}/tolak', [AdminDokumentasiController::class, 'tolak'])->name('dokumentasi.tolak');
+
+        Route::resource('edukasi', AdminKontenEdukasiController::class)
+            ->parameters(['edukasi' => 'konten'])
+            ->except(['show']);
+        Route::patch('edukasi/{konten}/status', [AdminKontenEdukasiController::class, 'status'])->name('edukasi.status');
     });
 
 Route::prefix('komunitas')
@@ -149,4 +179,13 @@ Route::prefix('komunitas')
         Route::put('profil/{komunitas?}', [ProfilKomunitasController::class, 'updateKomunitas'])->name('profil.update');
 
         Route::get('jadwal-kesiapsiagaan', [KomunitasJadwalController::class, 'index'])->name('jadwal.index');
+
+        // F-08 Dokumentasi aksi (PBI-022)
+        Route::get('dokumentasi', [KomunitasDokumentasiController::class, 'index'])->name('dokumentasi.index');
+        Route::get('dokumentasi/unggah', [KomunitasDokumentasiController::class, 'create'])->name('dokumentasi.create');
+        Route::post('dokumentasi', [KomunitasDokumentasiController::class, 'store'])->middleware('throttle:10,1')->name('dokumentasi.store');
+        Route::get('dokumentasi/{dokumentasi}/media', [KomunitasDokumentasiController::class, 'media'])->name('dokumentasi.media');
+        Route::get('dokumentasi/{dokumentasi}/perbaiki', [KomunitasDokumentasiController::class, 'edit'])->name('dokumentasi.edit');
+        Route::put('dokumentasi/{dokumentasi}', [KomunitasDokumentasiController::class, 'update'])->middleware('throttle:10,1')->name('dokumentasi.update');
+        Route::delete('dokumentasi/{dokumentasi}', [KomunitasDokumentasiController::class, 'destroy'])->middleware('throttle:20,1')->name('dokumentasi.destroy');
     });

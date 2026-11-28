@@ -228,14 +228,14 @@ test('pbi-006 kode laporan dibuat unik dengan format ALR-XXXXXX', function () {
     $kode->each(fn ($k) => expect($k)->toMatch(LaporanBanjirService::POLA_KODE));
 });
 
-test('halaman publik beranda, placeholder, dan konfigurasi form tersedia', function () {
+test('halaman publik beranda, cuaca, donasi, edukasi, dan konfigurasi form tersedia', function () {
     $this->get(route('landing'))->assertOk()
         ->assertSee('Lapor Banjir')
         ->assertSee('id="lapor-config"', false)
         ->assertSee('challenges.cloudflare.com/turnstile', false);
 
-    foreach (['cuaca' => 'Cuaca', 'donasi' => 'Donasi', 'edukasi' => 'Edukasi'] as $route => $judul) {
-        $this->get(route($route))->assertOk()->assertSee($judul)->assertSee('Halaman ini belum tersedia');
+    foreach (['cuaca' => 'Kalender risiko rob', 'donasi' => 'Katalog kebutuhan posko', 'edukasi' => 'Seberapa dalam itu berbahaya'] as $route => $teks) {
+        $this->get(route($route))->assertOk()->assertSee($teks)->assertSee('id="lapor-config"', false);
     }
 });
 

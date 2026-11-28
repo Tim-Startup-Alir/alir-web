@@ -32,6 +32,7 @@ class FormLaporConfig
             'url' => [
                 'kirim' => route('lapor.store'),
                 'cek' => route('lapor.cek-lokasi'),
+                'lacak' => route('lacak.cari'),
             ],
             'turnstile' => (string) config('services.turnstile.site_key'),
             'fotoMaksKb' => (int) config('alir.laporan.foto_maks_kb', 5120),

@@ -127,12 +127,12 @@ test('pbi-004/005/006 dusk warga melapor banjir lalu admin menemukan laporan dar
         ->and($laporan->foto)->toHaveCount(1);
 });
 
-test('dusk halaman cuaca, donasi, dan edukasi masih kosong untuk fitur lain', function () {
+test('dusk halaman cuaca, donasi, dan edukasi tampil (FE saja)', function () {
     /** @var DuskTestCase $dusk */
     $dusk = $this;
     $dusk->browse(function (Browser $browser) {
-        foreach (['/cuaca' => 'Cuaca', '/donasi' => 'Donasi', '/edukasi' => 'Edukasi'] as $url => $judul) {
-            $browser->visit($url)->assertSee($judul)->assertPresent('@placeholder-kosong');
+        foreach (['/cuaca' => '.pg-cuaca', '/donasi' => '.pg-donasi', '/edukasi' => '.pg-edukasi'] as $url => $selector) {
+            $browser->visit($url)->assertPresent($selector);
         }
     });
 });

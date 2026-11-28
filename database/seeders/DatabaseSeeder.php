@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             KomunitasDefaultSeeder::class,
             TemplateWhatsappSeeder::class,
             NomorDaruratSeeder::class,
+            KontenEdukasiSeeder::class,
         ]);
     }
 }
