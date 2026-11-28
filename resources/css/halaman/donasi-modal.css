@@ -1,0 +1,96 @@
+/* Modal "Donasi barang" (halaman Donasi): banner foto + angka besar. Overlay: .ld-ov/.ld-modal (landing.css). */
+.ld-modal.dm {
+  width: min(460px, 100%); display: flex; flex-direction: column; overflow: hidden; border-radius: 28px;
+
+  & .hide { display: none !important }
+
+  /* banner foto */
+  & .dm-ban { position: relative; flex: none; height: 168px; overflow: hidden; background: var(--navy) }
+  & .dm-ban img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); animation: dmZoom 6s ease-out both }
+  & .dm-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 30, 51, .35) 0%, rgba(11, 30, 51, .55) 45%, rgba(11, 30, 51, .92) 100%) }
+  & .dm-x { position: absolute; z-index: 3; top: 14px; right: 14px; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: rgba(248, 250, 252, .16); border: 1px solid rgba(248, 250, 252, .25); color: #fff; backdrop-filter: blur(8px); transition: background .2s, color .2s, transform .3s var(--ease) }
+  & .dm-x:hover { background: #fff; color: var(--navy); transform: rotate(90deg) }
+  & .dm-cap { position: absolute; z-index: 2; left: 22px; right: 22px; bottom: 26px; color: #fff }
+  & .dm-urg { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff }
+  & .dm-urg.bg-red { background: var(--red) }
+  & .dm-urg.bg-amber { background: var(--amber); color: var(--navy) }
+  & .dm-urg.bg-teal { background: var(--teal) }
+  & .dm-cap h2 { margin-top: 8px; font-size: 24px; letter-spacing: -.03em; line-height: 1.1 }
+  & .dm-cap p { margin-top: 4px; font-size: 13px; color: #CBD5E1 }
+  & .dm-waves { position: absolute; z-index: 2; left: 0; right: 0; bottom: -1px; height: 22px; overflow: hidden; pointer-events: none }
+  & .dm-waves > div { position: absolute; left: 0; bottom: 0; width: 100%; height: 100% }
+  & .dm-waves svg { position: absolute; left: 0; bottom: 0; width: 200%; height: 100% }
+  & .dm-waves .a svg { animation: alirTicker 7s linear infinite reverse }
+  & .dm-waves .b svg { animation: alirTicker 11s linear infinite }
+
+  & .dm-b { display: grid; gap: 18px; padding: 8px 22px 20px; overflow: auto; flex: 1; min-height: 0; overscroll-behavior: contain; background: #fff }
+
+  /* angka besar */
+  & .dm-total { text-align: center }
+  & .dm-total small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--s-500) }
+  & .dm-total b { display: block; margin-top: 2px; font-size: clamp(38px, 11vw, 52px); font-weight: 800; letter-spacing: -.05em; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--navy) }
+  & .dm-total span { display: block; margin-top: 2px; font-size: 13px; color: var(--s-600) }
+  & .dm-bar { margin: 12px auto 6px; max-width: 240px; height: 6px; border-radius: 99px; background: var(--s-100); overflow: hidden }
+  & .dm-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FFB27A, var(--coral)) }
+  & .dm-total em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--coral-dark) }
+
+  /* tab */
+  & .dm-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 99px; background: var(--s-100) }
+  & .dm-tabs button { padding: 10px 12px; border-radius: 99px; font-weight: 700; font-size: 13.5px; color: var(--s-600); transition: all .25s var(--ease) }
+  & .dm-tabs button.on { background: var(--navy); color: #fff; box-shadow: 0 6px 16px rgba(11, 30, 51, .2) }
+
+  /* stepper jumlah */
+  & #fq { text-align: center; animation: alirUp .3s both }
+  & #fn { animation: alirUp .3s both }
+  & .dm-qty { display: inline-flex; align-items: center; gap: 18px }
+  & .dm-qty button { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--s-200); background: #fff; color: var(--navy); transition: all .2s var(--ease) }
+  & .dm-qty button:hover { background: var(--navy); border-color: var(--navy); color: #fff; transform: scale(1.08) }
+  & .dm-qty button:active { transform: scale(.94) }
+  & .dm-qty output { min-width: 64px; font-size: 40px; font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums }
+  & .dm-unit { margin-top: -4px; font-size: 13px; font-weight: 700; color: var(--s-500) }
+  & .dm-quick { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 14px }
+  & .dm-quick button { padding: 8px 16px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; font-weight: 700; font-size: 13px; transition: all .2s var(--ease) }
+  & .dm-quick button:hover { border-color: var(--navy); transform: translateY(-2px) }
+  & .dm-quick button.on { background: var(--coral); border-color: var(--coral); color: var(--navy) }
+
+  /* nominal bebas */
+  & .dm-nom { display: flex; align-items: center; gap: 8px; padding: 0 18px; border: 1.5px solid var(--s-200); border-radius: 18px; background: #fff; transition: border-color .2s, box-shadow .2s }
+  & .dm-nom:focus-within { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
+  & .dm-nom span { font-weight: 800; color: var(--s-500) }
+  & .dm-nom input { flex: 1; min-width: 0; height: 58px; border: 0; outline: 0; background: none; font-size: 26px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums }
+
+  /* nama donatur: floating label */
+  & .dm-fl { position: relative }
+  & .dm-name { display: block; width: 100%; height: 54px; padding: 18px 16px 0; border: 1.5px solid var(--s-200); border-radius: 16px; background: #fff; outline: 0; font-weight: 600; transition: border-color .2s, box-shadow .2s }
+  & .dm-fl label { position: absolute; left: 17px; top: 17px; font-size: 15px; font-weight: 500; color: var(--s-500); pointer-events: none; transition: all .2s var(--ease) }
+  & .dm-name:focus + label, & .dm-name:not(:placeholder-shown) + label { top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--coral-dark) }
+  & .dm-name:focus { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(255, 106, 61, .15) }
+  & .dm-name.err { border-color: var(--red); animation: ldShake .35s both }
+  & .dm-name:disabled { background: var(--s-100); color: var(--s-400) }
+  & .dm-err { margin-top: 6px; font-size: 12.5px; font-weight: 700; color: var(--red-ink) }
+  & .dm-anon { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--s-600) }
+  & .dm-anon input { position: absolute; opacity: 0; pointer-events: none }
+  & .dm-sw { position: relative; flex: none; width: 42px; height: 24px; border-radius: 99px; background: var(--s-300); transition: background .25s }
+  & .dm-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .25s var(--ease) }
+  & .dm-anon input:checked + .dm-sw { background: var(--coral) }
+  & .dm-anon input:checked + .dm-sw::after { transform: translateX(18px) }
+  & .dm-anon input:focus-visible + .dm-sw { outline: 3px solid rgba(255, 106, 61, .45); outline-offset: 2px }
+
+  /* footer */
+  & .dm-f { flex: none; padding: 12px 22px 18px; background: #fff; border-top: 1px solid var(--s-100) }
+  & .dm-go { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 16px 22px; border-radius: 99px; background: var(--coral); color: var(--navy); font-weight: 800; font-size: 16px; box-shadow: 0 10px 24px rgba(255, 106, 61, .35); transition: transform .25s var(--ease), background .25s }
+  & .dm-go svg { transition: transform .3s var(--ease) }
+  & .dm-go:hover:not(:disabled) { background: var(--coral-hover); transform: translateY(-2px) }
+  & .dm-go:hover:not(:disabled) svg { transform: translateX(5px) }
+  & .dm-go:disabled { opacity: .45; box-shadow: none; cursor: not-allowed }
+  & .dm-f p { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; font-size: 12px; color: var(--s-500) }
+  & .dm-f p svg { width: 14px; height: 14px; color: var(--teal) }
+}
+@keyframes dmZoom { from { transform: scale(1.18) } to { transform: scale(1.06) } }
+@media (max-width: 560px) {
+  .ld-ov:has(.ld-modal.dm) { padding: 0; place-items: end center }
+  .ld-modal.dm { width: 100%; max-height: 94dvh; border-radius: 24px 24px 0 0 }
+  .ld-modal.dm .dm-ban { height: 128px }
+  .ld-modal.dm .dm-cap { bottom: 22px }
+  .ld-modal.dm .dm-cap h2 { font-size: 21px }
+}

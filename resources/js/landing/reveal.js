@@ -4,8 +4,8 @@ import { $$, reduceMotion } from './util';
 export function countUp(el) {
     if (el._done) return;
     el._done = true;
-    const to = parseFloat(el.dataset.count), pre = el.dataset.pre || '', suf = el.dataset.suf || '';
-    const fmt = (v) => pre + Math.round(v).toLocaleString('id-ID') + suf;
+    const to = parseFloat(el.dataset.count), pre = el.dataset.pre || '', suf = el.dataset.suf || '', dec = +(el.dataset.dec || 0);
+    const fmt = (v) => pre + v.toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + suf;
     if (reduceMotion()) {
         el.textContent = fmt(to);
         return;
@@ -23,6 +23,20 @@ export function growBar(i) {
     if (i._g) return;
     i._g = true;
     requestAnimationFrame(() => setTimeout(() => (i.style.width = i.dataset.bar + '%'), 80));
+}
+
+/** bar progres (.bar>i) tumbuh dari 0 selama 1,4 dtk (port growBars mockup) */
+export function growBars(root = document) {
+    $$('.bar>i', root).forEach((i) => {
+        if (i._g) return;
+        i._g = true;
+        const w = i.style.width;
+        if (!w) return;
+        i.style.width = '0%';
+        i.style.transition = 'width 1.4s cubic-bezier(.2,.8,.2,1)';
+        void i.offsetWidth;
+        requestAnimationFrame(() => setTimeout(() => (i.style.width = w), 80));
+    });
 }
 
 let io;
@@ -44,4 +58,5 @@ export function mountReveal(root = document) {
         el._o = true;
         io.observe(el);
     });
+    growBars(root);
 }

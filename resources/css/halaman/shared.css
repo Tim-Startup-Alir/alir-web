@@ -1,0 +1,29 @@
+/* Gaya editorial bersama untuk halaman publik Cuaca, Donasi, Edukasi (port dari mockup base.css). */
+:is(.pg-cuaca, .pg-donasi, .pg-edukasi) {
+  & .h2x { font-size: clamp(34px, 4.6vw, 60px); line-height: .98; letter-spacing: -.04em; margin: 12px 0 0 }
+  & .sec-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 28px }
+  & .glass-d { border-radius: 28px; background: rgba(248, 250, 252, .07); border: 1px solid rgba(248, 250, 252, .12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px) }
+  & .bar { height: 8px; border-radius: 99px; background: var(--s-100); overflow: hidden; position: relative }
+  & .bar > i { display: block; height: 100%; border-radius: 99px; background: var(--teal) }
+  & .bar.coral > i { background: var(--coral) }
+  & .bar.amber > i { background: var(--amber) }
+  & .gs { filter: grayscale(1) contrast(1.08); transition: filter .6s var(--ease) }
+  & .dc:hover .gs, & .dc:active .gs, & .gs:hover { filter: none }
+  & [data-bar] { width: 0; transition: width 1.4s var(--ease) }
+  & .pt { position: fixed; z-index: 3200 }
+}
+/* serpihan konfeti (burst) ditambahkan ke <body>, di luar wrapper halaman */
+.pt { position: fixed; z-index: 3200; width: 9px; height: 14px; border-radius: 2px; pointer-events: none; animation: burst var(--du, 1.5s) cubic-bezier(.2, .8, .3, 1) forwards }
+.pt.dot { width: 9px; height: 9px; border-radius: 50% }
+.pg-donasi .hide, .ld-modal.dm .hide { display: none !important }
+/* chip & segmented control (dari mockup base.css), dipakai filter Donasi, preset Edukasi, dan modal donasi */
+:is(.pg-donasi, .pg-edukasi, .ld-modal.dm) {
+  & .chips { display: flex; gap: 8px; flex-wrap: wrap }
+  & .chip { height: 36px; padding: 0 16px; border-radius: 99px; border: 1.5px solid var(--s-200); background: #fff; font-weight: 600; font-size: 13.5px; transition: .2s }
+  & .chip:hover { border-color: var(--navy) }
+  & .chip.on { background: var(--navy); border-color: var(--navy); color: #fff }
+  & .seg { display: inline-flex; padding: 4px; border-radius: 99px; background: var(--s-100); gap: 2px }
+  & .seg button { height: 34px; padding: 0 16px; border-radius: 99px; font-weight: 700; font-size: 13px; color: var(--s-600); transition: .2s }
+  & .seg button.on { background: #fff; color: var(--navy); box-shadow: var(--sh-sm) }
+  & .empty { padding: 40px; text-align: center; color: var(--s-400); font-weight: 600 }
+}

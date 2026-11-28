@@ -174,17 +174,7 @@
     .lp-ht p { display: none }
     .lp-next { min-width: 0; flex: 1 }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .lp-in, .lp-err { animation: none }
-  }
-
-  /* hormati prefers-reduced-motion (mockup tidak; ini peningkatan) */
-  @media (prefers-reduced-motion: reduce) {
-    .ld-ticker, .live-dot, .bob, .hw .l svg { animation: none !important }
-    .js [data-reveal] { opacity: 1; transform: none; transition: none }
-    .hw { transition: none !important }
-    html { scroll-behavior: auto }
-  }
+  /* Catatan: seperti mockup, animasi sengaja TIDAK dimatikan oleh prefers-reduced-motion. */
 }
 
   /* spinner kecil untuk modal Lapor Banjir */
@@ -209,4 +199,3 @@
   .lk-belum b { color: var(--s-400) }
   .lk-belum p { color: var(--s-400) }
   @keyframes lkPulse { 50% { box-shadow: 0 0 0 8px rgba(255, 106, 61, 0) } }
-  @media (prefers-reduced-motion: reduce) { .lk-aktif .lk-dot { animation: none } }

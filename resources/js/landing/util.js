@@ -4,7 +4,8 @@ export const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-export const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Mockup mengabaikan prefers-reduced-motion, jadi animasi (hujan, radar, reveal, dst.) selalu jalan. */
+export const reduceMotion = () => false;
 
 export const icons = () => {
     try {

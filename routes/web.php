@@ -18,14 +18,17 @@ use App\Http\Controllers\Komunitas\KonfirmasiLapanganController as KomunitasKonf
 use App\Http\Controllers\LacakLaporanController;
 use App\Http\Controllers\LaporanBanjirController;
 use App\Http\Controllers\ProfilKomunitasController;
+use App\Http\Controllers\Publik\CuacaController;
+use App\Http\Controllers\Publik\DonasiController;
+use App\Http\Controllers\Publik\EdukasiController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman publik. Beranda + modal Lapor Banjir = F-02 (PBI-004/005/006);
-// Cuaca, Donasi, Edukasi masih placeholder untuk diisi pemilik fitur masing-masing.
+// Cuaca, Donasi, Edukasi: tampilan FE saja (data contoh), tinggal diisi pemilik PBI masing-masing.
 Route::view('/', 'landing.index')->name('landing');
-Route::view('/cuaca', 'publik.placeholder', ['judul' => 'Cuaca & Peringatan', 'kicker' => 'CUACA', 'ikon' => 'cloud-sun'])->name('cuaca');
-Route::view('/donasi', 'publik.placeholder', ['judul' => 'Donasi & Transparansi', 'kicker' => 'DONASI', 'ikon' => 'heart-handshake'])->name('donasi');
-Route::view('/edukasi', 'publik.placeholder', ['judul' => 'Edukasi Siaga Banjir', 'kicker' => 'EDUKASI', 'ikon' => 'book-open'])->name('edukasi');
+Route::get('/cuaca', [CuacaController::class, 'index'])->name('cuaca');
+Route::get('/donasi', [DonasiController::class, 'index'])->name('donasi');
+Route::get('/edukasi', [EdukasiController::class, 'index'])->name('edukasi');
 
 // F-02 Pelaporan Banjir publik tanpa login (NFR-02: CAPTCHA + rate limit)
 Route::post('/lapor', [LaporanBanjirController::class, 'store'])->middleware('throttle:lapor-banjir')->name('lapor.store');

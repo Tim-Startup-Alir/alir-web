@@ -4,6 +4,11 @@
 @import './base.css';
 @import './panel.css';
 @import './landing.css';
+@import './halaman/shared.css';
+@import './halaman/cuaca.css';
+@import './halaman/donasi.css';
+@import './halaman/donasi-modal.css';
+@import './halaman/edukasi.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
