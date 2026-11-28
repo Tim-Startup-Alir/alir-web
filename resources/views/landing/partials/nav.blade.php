@@ -1,6 +1,6 @@
 @php
     // Menu mengikuti mockup: setiap menu adalah halaman tersendiri
-    $links = [['landing', 'Beranda'], ['cuaca', 'Cuaca'], ['donasi', 'Donasi'], ['edukasi', 'Edukasi']];
+    $links = [['landing', 'Beranda'], ['cuaca', 'Cuaca'], ['donasi', 'Donasi'], ['galeri', 'Galeri'], ['edukasi', 'Edukasi']];
     $dashboard = null;
     if (auth()->check()) {
         $dashboard = match (auth()->user()->role) {

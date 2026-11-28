@@ -60,6 +60,22 @@
                 @endforeach
             </ol>
 
+            @if ($lacak['dokumentasi']->isNotEmpty())
+                <h2 class="mt-8 mb-1 text-lg font-extrabold">Dokumentasi penanganan</h2>
+                <p class="mb-4 text-sm text-s-500">Bukti kegiatan relawan yang sudah diperiksa Tim ALIR. Cerita lengkapnya ada di <a href="{{ route('galeri') }}" class="font-bold underline">Galeri Aksi</a>.</p>
+                <div class="grid gap-4 sm:grid-cols-2" dusk="lacak-dokumentasi">
+                    @foreach ($lacak['dokumentasi'] as $d)
+                        <figure class="overflow-hidden rounded-2xl bg-s-100">
+                            @if ($d->isVideo())
+                                <video src="{{ route('galeri.media', $d) }}" controls preload="metadata" class="aspect-video w-full bg-black object-cover"></video>
+                            @else
+                                <img src="{{ route('galeri.media', $d) }}" alt="Dokumentasi penanganan laporan {{ $lacak['kode'] }}" loading="lazy" class="aspect-video w-full object-cover">
+                            @endif
+                        </figure>
+                    @endforeach
+                </div>
+            @endif
+
             <div class="mt-6 flex gap-3 rounded-2xl bg-teal-tint p-4 text-sm text-teal-ink">
                 <i data-lucide="message-circle" class="mt-0.5 flex-none"></i>
                 <p>Kabar terbaru juga dikirim lewat WhatsApp. Jika kondisi memburuk atau ada korban jiwa, segera hubungi <a href="tel:112" class="font-extrabold underline">112</a>.</p>

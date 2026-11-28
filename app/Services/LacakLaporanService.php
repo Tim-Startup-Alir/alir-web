@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\StatusLaporan;
+use App\Models\Dokumentasi;
 use App\Models\LaporanBanjir;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -48,7 +49,19 @@ class LacakLaporanService
             'dikirim' => $laporan->created_at,
             'pesan' => $this->pesan($status),
             'linimasa' => $this->linimasa($laporan),
+            'dokumentasi' => $this->dokumentasi($laporan),
         ];
+    }
+
+    /**
+     * Bukti penanganan: hanya dokumentasi yang sudah disetujui Tim ALIR (sudah tampil di galeri publik).
+     * Nama komunitas dan catatan kegiatan (teks bebas) tidak ikut ditampilkan, sama seperti bagian lain halaman ini.
+     *
+     * @return Collection<int, Dokumentasi>
+     */
+    public function dokumentasi(LaporanBanjir $laporan): Collection
+    {
+        return Dokumentasi::query()->disetujui()->where('laporan_banjir_id', $laporan->getKey())->latest()->limit(6)->get();
     }
 
     /** @return array<int, array{judul: string, keterangan: string, waktu: ?CarbonInterface, state: string}> */
